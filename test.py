@@ -214,6 +214,10 @@ def main_report(config, arp_entries, dhcp_entries, error_list):
             host_arp = '-'
             ts_arp   = '-'
 
+        # matching MAC addresses?
+        if mac_dhcp != '-' and mac_dhcp == mac_arp:
+            mac_dhcp = "[ SAME AS ARP ]"
+
         #print '  {0:16} | {1:30} | {2:4}'.format(ip, host, resolved_ip)
         print format_str.format(ip, host, resolved_ip, mac_dhcp, mac_arp, ts_arp)
 
