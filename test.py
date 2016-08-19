@@ -170,7 +170,7 @@ def main_report(config, arp_entries, dhcp_entries, error_list):
     print "\nall records:\n"
 
 # IP -> host -> IP (match y/n) -> MAC (DHCP) -> MAC (ARP) -> timestamp (ARP)
-    format_str = '  {0:16} | {1:30} | {2:8} | {3:18} | {4:18} | {5}'
+    format_str = '  {0:16} | {1:24} | {2:8} | {3:18} | {4:18} | {5}'
     print format_str.format('IP', 'Host', 'Host->IP', 'MAC (DHCP)', 'MAC (ARP)', 'Last seen (ARP)')
     print
     for ip in net.iter_hosts():
@@ -199,6 +199,8 @@ def main_report(config, arp_entries, dhcp_entries, error_list):
         # do we have a hostname in the dhcp entries? first change to short hostname
         if host != '-' and host.endswith(config.get('Network', 'domain')):
             short_host = host[:-len(config.get('Network', 'v4address'))]
+            # only print the short hostname if it's in the domain
+            host = short_host
 
             if short_host in dhcp_entries:
                 mac_dhcp = dhcp_entries[short_host]
