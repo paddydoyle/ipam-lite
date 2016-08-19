@@ -116,7 +116,7 @@ def main_report(config, arp_entries, dhcp_entries, error_list):
     # current timestamp
     date_now = datetime.now()
 
-    net = IPNetwork(config.get('Network', 'v4address') + '/' + config.get('Network', 'v4mask'))
+    net = IPNetwork('%s/%s' % (config.get('Network', 'v4address'), config.get('Network', 'v4mask')))
 
     reverse_lookups = {}
     forward_lookups = {}
@@ -155,7 +155,7 @@ def main_report(config, arp_entries, dhcp_entries, error_list):
                 resolved_ip = record_error(error_list, "unable to forward look up " + host)
 
         if resolved_ip and ip != resolved_ip:
-            print "warning: " + ip + " != " + resolved_ip
+            print "warning: %s != %s" % (ip, resolved_ip)
 
     #print "\nall forward lookups:\n"
     #for host in forward_lookups:
@@ -194,7 +194,7 @@ def main_report(config, arp_entries, dhcp_entries, error_list):
         elif host == '-':
             resolved_ip = '-'
         else:
-            resolved_ip = record_error(error_list, 'forward and reverse lookup mismatch for ' + ip + ' => ' + host + ' => ' + resolved_ip)
+            resolved_ip = record_error(error_list, 'forward and reverse lookup mismatch for %s => %s => %s' % (ip, host, resolved_ip))
 
         # do we have a hostname in the dhcp entries? first change to short hostname
         if host != '-' and host.endswith(config.get('Network', 'domain')):
@@ -496,7 +496,7 @@ def parse_dhcp_file(dhcp_file, error_list):
     f.close()
 
     #for e in dhcp_entries:
-    #    print e + " => " + str(dhcp_entries[e])
+    #    print '%s => %s' % (e, str(dhcp_entries[e]))
 
     return dhcp_entries
 
@@ -540,7 +540,7 @@ def parse_arp_file(arp_file, error_list):
     f.close()
 
     #for e in arp_entries:
-    #    print e + " => " + str(arp_entries[e])
+    #    print '%s => %s' % (e, str(dhcp_entries[e]))
 
     return arp_entries
 
@@ -548,7 +548,7 @@ def parse_arp_file(arp_file, error_list):
 def record_error(error_list, message):
     'Store the error string, and return the index into the error array'
     error_list.append(message)
-    return 'ERR' + str(len(error_list)-1)
+    return 'ERR%d' % (len(error_list)-1)
 
 
 def display_errors(error_list):
