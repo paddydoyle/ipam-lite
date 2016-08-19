@@ -87,10 +87,10 @@ def main():
     arp_entries = parse_arp_file(arp_file, error_list)
 
     # read the dhcp entries
-    parse_dhcp_file(dhcp_file, error_list)
+    dhcp_entries = parse_dhcp_file(dhcp_file, error_list)
 
     # loop
-    loop_over_addresses(config, arp_entries, error_list)
+    main_report(config, arp_entries, dhcp_entries, error_list)
 
 #    tpl = read_addrs(args.address_file)
 #
@@ -106,7 +106,7 @@ def main():
         display_errors(error_list)
 
 
-def loop_over_addresses(config, arp_entries, error_list):
+def main_report(config, arp_entries, dhcp_entries, error_list):
     'loop over all of the addresses in the range'
 
     net = IPNetwork(config.get('Network', 'v4address') + '/' + config.get('Network', 'v4mask'))
@@ -116,10 +116,14 @@ def loop_over_addresses(config, arp_entries, error_list):
 
     for ip in net.iter_hosts():
         ip = str(ip)
-        print '%s' % ip
+
+        if args.verbose:
+            print '%s' % ip
+
         host = ''
         resolved_ip = ''
 
+        # look up the hostname
         try:
             res = socket.gethostbyaddr( ip )
 
@@ -130,8 +134,10 @@ def loop_over_addresses(config, arp_entries, error_list):
             reverse_lookups[ip] = host
 
         except socket.error:
-            print "unable to reverse look up " + ip
+            if args.verbose:
+                print "unable to reverse look up " + ip
 
+        # now resolve the IP
         if host:
             try:
                 resolved_ip = socket.gethostbyname(host)
@@ -151,11 +157,19 @@ def loop_over_addresses(config, arp_entries, error_list):
     #for ip in reverse_lookups:
     #    print '  {0:20} ==> {1:20}'.format(ip, reverse_lookups[ip])
 
+    # TODO: split the function here? create a dict of dicts of the entries?
+
+
     print "\nall records:\n"
 
+# IP -> host -> IP (match y/n) -> MAC (DHCP) -> MAC (ARP) -> timestamp (ARP)
+    format_str = '  {0:16} | {1:30} | {2:8} | {3:18} | {4:18} | {5}'
+    print format_str.format('IP', 'Host', 'Host->IP', 'MAC (DHCP)', 'MAC (ARP)', 'Last seen (ARP)')
+    print
     for ip in net.iter_hosts():
         ip = str(ip)
 
+        # did we have a hostname?
         if not ip in reverse_lookups:
             host = '-'
             resolved_ip = '-'
@@ -167,6 +181,7 @@ def loop_over_addresses(config, arp_entries, error_list):
         else:
             resolved_ip = forward_lookups[host]
 
+        # does the hostname resolve back to the same IP?
         if ip == resolved_ip:
             resolved_ip = 'OK'
         elif host == '-':
@@ -174,7 +189,32 @@ def loop_over_addresses(config, arp_entries, error_list):
         else:
             resolved_ip = record_error(error_list, 'forward and reverse lookup mismatch for ' + ip + ' => ' + host + ' => ' + resolved_ip)
 
-        print '  {0:16} | {1:30} | {2:4}'.format(ip, host, resolved_ip)
+        # do we have a hostname in the dhcp entries? first change to short hostname
+        if host != '-' and host.endswith(config.get('Network', 'domain')):
+            short_host = host[:-len(config.get('Network', 'v4address'))]
+
+            if short_host in dhcp_entries:
+                mac_dhcp = dhcp_entries[short_host]
+            else:
+                mac_dhcp = '-'
+
+        else:
+            short_host = '-'
+            mac_dhcp = '-'
+
+        # do we have an entry in arp?
+        if ip in arp_entries:
+            mac_arp  = arp_entries[ip]['mac']
+            host_arp = arp_entries[ip]['host']
+            ts_arp   = arp_entries[ip]['ts']
+        else:
+            mac_arp  = '-'
+            host_arp = '-'
+            ts_arp   = '-'
+
+        #print '  {0:16} | {1:30} | {2:4}'.format(ip, host, resolved_ip)
+        print '  {0:16} | {1:30} | {2:8} | {3:18} | {4:18} | {5}'.format(ip, host, resolved_ip, mac_dhcp, mac_arp, ts_arp)
+
 
 def create_mail(fromaddr, replyto, subject, name, addr, msg):
     'prefixes header info to email'
@@ -468,7 +508,7 @@ def parse_arp_file(arp_file, error_list):
             print '%s' % entry_list
 
         arp_entries[entry_list[1]] = {
-            'arp': entry_list[0],
+            'mac': entry_list[0],
             'ts': entry_list[2],
             'host': entry_list[3] if len(entry_list) > 3 else '',
         }
