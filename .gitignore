@@ -1,0 +1,5 @@
+.*.swp
+
+*.dat
+*.conf
+db.*
