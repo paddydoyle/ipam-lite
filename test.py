@@ -7,8 +7,10 @@ import subprocess
 import ConfigParser
 from datetime import date
 import argparse
-# FIXME
-from netaddr import *
+from netaddr import EUI
+from netaddr import core
+from netaddr import IPNetwork
+from netaddr import mac_unix
 import pprint
 import socket
 
@@ -213,7 +215,7 @@ def main_report(config, arp_entries, dhcp_entries, error_list):
             ts_arp   = '-'
 
         #print '  {0:16} | {1:30} | {2:4}'.format(ip, host, resolved_ip)
-        print '  {0:16} | {1:30} | {2:8} | {3:18} | {4:18} | {5}'.format(ip, host, resolved_ip, mac_dhcp, mac_arp, ts_arp)
+        print format_str.format(ip, host, resolved_ip, mac_dhcp, mac_arp, ts_arp)
 
 
 def create_mail(fromaddr, replyto, subject, name, addr, msg):
@@ -458,11 +460,12 @@ def parse_dhcp_file(dhcp_file, error_list):
 
         # try match the main regex
         # host tcin01 { hardware ethernet 00:30:48:7c:9b:ee;
-        matched = re.match('^\s*host\s+(\S+) \{\s*hardware\s*ethernet\s*(\S+)',fline)
+        #matched = re.match('^\s*host\s+(\S+) \{\s*hardware\s*ethernet\s*(\S+)',fline)
+        matched = re.match('^\s*host\s+(\S+) \{\s*hardware\s*ethernet\s*([0-9a-fA-F:]+)',fline)
 
         if matched:
             host = matched.group(1)
-            mac  = matched.group(2)
+            mac  = canonicalise_mac(matched.group(2))
 
             dhcp_entries[host] = mac;
 
@@ -508,7 +511,7 @@ def parse_arp_file(arp_file, error_list):
             print '%s' % entry_list
 
         arp_entries[entry_list[1]] = {
-            'mac': entry_list[0],
+            'mac': canonicalise_mac(entry_list[0]),
             'ts': entry_list[2],
             'host': entry_list[3] if len(entry_list) > 3 else '',
         }
@@ -532,6 +535,26 @@ def display_errors(error_list):
 
     for idx,err in enumerate(error_list):
         print 'ERR%-5d %s' % (idx, err)
+
+
+def canonicalise_mac(mac_str):
+    'Standardise on the MAC address format'
+
+    # the 'mac_unix_expanded' format is only in a later version of the netaddr module
+    # create a custom format
+    class mac_custom(mac_unix): pass
+    mac_custom.word_fmt = '%.2x'
+
+    try:
+        mac = EUI(mac_str, dialect=mac_custom)
+        #mac.dialect = mac_unix_expanded
+        #mac.dialect = mac_unix
+    except core.AddrFormatError:
+        print "ERROR: unable to parse '%s' as a MAC address; skipping" % mac_str
+        return ''
+
+    # return a string
+    return '%s' % mac
 
 
 if __name__ == '__main__':
