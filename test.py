@@ -13,6 +13,8 @@ from netaddr import IPNetwork
 from netaddr import mac_unix
 import pprint
 import socket
+from datetime import datetime
+from datetime import date
 
 
 
@@ -110,6 +112,9 @@ def main():
 
 def main_report(config, arp_entries, dhcp_entries, error_list):
     'loop over all of the addresses in the range'
+
+    # current timestamp
+    date_now = datetime.now()
 
     net = IPNetwork(config.get('Network', 'v4address') + '/' + config.get('Network', 'v4mask'))
 
@@ -217,6 +222,16 @@ def main_report(config, arp_entries, dhcp_entries, error_list):
         # matching MAC addresses?
         if mac_dhcp != '-' and mac_dhcp == mac_arp:
             mac_dhcp = "[ SAME AS ARP ]"
+
+        if ts_arp != '-':
+            date_arp = datetime.fromtimestamp(int(ts_arp))
+            #ts_arp = date_arp.strftime('%Y-%m-%d %H:%M:%S')
+            ts_arp = date_arp.strftime('%Y-%m-%d')
+
+            delta = date_now - date_arp
+            # TODO: configurable parameter of how many days?
+            if delta.days > 1:
+                ts_arp += ' [%d days]' % delta.days
 
         #print '  {0:16} | {1:30} | {2:4}'.format(ip, host, resolved_ip)
         print format_str.format(ip, host, resolved_ip, mac_dhcp, mac_arp, ts_arp)
