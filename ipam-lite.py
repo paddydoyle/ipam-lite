@@ -16,14 +16,15 @@ import socket
 from datetime import datetime
 from datetime import date
 
-
-
-####################################################
-# vars
-####################################################
-
-
-####################################################
+##############################################################################
+# ipam-lite
+# 2016-08-22 paddy@tchpc.tcd.ie
+# For a given (IPv4) subnet, resolve the IP addresses and hostnames, looking
+# for simple errors. Additionally, parse dhcpd.conf and arp.dat looking for
+# other simple issues.
+# Print out a nice report of the IP usage in the subnet, including 'last seen'
+# dates from arpwatch.
+##############################################################################
 
 
 
