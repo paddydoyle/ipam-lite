@@ -118,8 +118,8 @@ def main_report(config, arp_entries, dhcp_entries, error_list):
                 print "unable to forward look up " + host
                 resolved_ip = record_error(error_list, "unable to forward look up " + host)
 
-        if resolved_ip and ip != resolved_ip:
-            print "warning: %s != %s" % (ip, resolved_ip)
+        #if resolved_ip and ip != resolved_ip:
+        #    print "warning: %s != %s" % (ip, resolved_ip)
 
     #print "\nall forward lookups:\n"
     #for host in forward_lookups:
@@ -252,7 +252,7 @@ def parse_dhcp_file(dhcp_file, error_list):
 
         if matched:
             host = matched.group(1)
-            mac  = canonicalise_mac(matched.group(2))
+            mac  = canonicalise_mac(matched.group(2), error_list)
 
             dhcp_entries[host] = mac;
 
@@ -298,7 +298,7 @@ def parse_arp_file(arp_file, error_list):
             print '%s' % entry_list
 
         arp_entries[entry_list[1]] = {
-            'mac': canonicalise_mac(entry_list[0]),
+            'mac': canonicalise_mac(entry_list[0], error_list),
             'ts': entry_list[2],
             'host': entry_list[3] if len(entry_list) > 3 else '',
         }
@@ -324,7 +324,7 @@ def display_errors(error_list):
         print 'ERR%-5d %s' % (idx, err)
 
 
-def canonicalise_mac(mac_str):
+def canonicalise_mac(mac_str, error_list):
     'Standardise on the MAC address format'
 
     # the 'mac_unix_expanded' format is only in a later version of the netaddr module
@@ -337,8 +337,9 @@ def canonicalise_mac(mac_str):
         #mac.dialect = mac_unix_expanded
         #mac.dialect = mac_unix
     except core.AddrFormatError:
-        print "ERROR: unable to parse '%s' as a MAC address; skipping" % mac_str
-        return ''
+        #print "ERROR: unable to parse '%s' as a MAC address; skipping" % mac_str
+        #return ''
+        return record_error(error_list, "unable to parse '%s' as a MAC address; skipping" % mac_str)
 
     # return a string
     return '%s' % mac
