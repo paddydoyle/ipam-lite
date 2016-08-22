@@ -294,14 +294,21 @@ def parse_arp_file(arp_file, error_list):
         # 2:0:ac:10:1:f 134.226.115.150 1444404183  dri-guest020
         entry_list = fline.split()
 
+        mac  = canonicalise_mac(entry_list[0], error_list)
+        ip   = entry_list[1]
+        ts   = entry_list[2]
+        host = entry_list[3] if len(entry_list) > 3 else ''
+
         if args.verbose:
             print '%s' % entry_list
 
-        arp_entries[entry_list[1]] = {
-            'mac': canonicalise_mac(entry_list[0], error_list),
-            'ts': entry_list[2],
-            'host': entry_list[3] if len(entry_list) > 3 else '',
-        }
+        # check for duplicate entries for the IP address; only store the most recent
+        if not ip in arp_entries or int(arp_entries[ip]['ts']) < int(ts):
+            arp_entries[ip] = {
+                'mac': mac,
+                'ts': ts,
+                'host': host,
+            }
 
     f.close()
 
