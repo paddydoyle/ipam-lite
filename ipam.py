@@ -40,8 +40,8 @@ parser = argparse.ArgumentParser()
 #parser.add_argument("message_file", help="text file (with tokens) containing the email body text")
 parser.add_argument("-v", "--verbose", help="increase output verbosity",
                     action="store_true")
-#parser.add_argument("-d", "--dpgt", help="specify that the mails are to be addressed to DPGT",
-#                    action="store_true")
+parser.add_argument("-d", "--dhcphostnames", help="check for hostnames in DHCP which don't resolve",
+                    action="store_true")
 parser.add_argument("-e", "--errors", help="display parsing and resolution errors",
                     action="store_true")
 args = parser.parse_args()
@@ -115,7 +115,7 @@ def main_report(config, arp_entries, dhcp_entries, error_list):
 
                 forward_lookups[host] = resolved_ip
             except socket.error:
-                print "unable to forward look up " + host
+                #print "unable to forward look up " + host
                 resolved_ip = record_error(error_list, "DNS: unable to forward look up " + host)
 
         #if resolved_ip and ip != resolved_ip:
@@ -261,6 +261,16 @@ def parse_dhcp_file(config, dhcp_file, error_list):
             if host != '-' and host.endswith(config.get('Network', 'domain')):
                 short_host = host[:-len(config.get('Network', 'v4address'))]
                 host = short_host
+
+            # see if the hostname in DHCP still resolves
+            if args.dhcphostnames:
+                try:
+                    resolved_ip = socket.gethostbyname('%s.%s' % (host, config.get('Network', 'domain')))
+
+                except socket.error:
+                    #print "unable to forward look up " + host
+                    record_error(error_list, "DHCP: unable to resolve " + host)
+
 
             dhcp_entries[host] = mac;
 
