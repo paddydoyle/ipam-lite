@@ -22,10 +22,6 @@ from datetime import date
 # vars
 ####################################################
 
-config_file    = 'config.ini'
-#data_file      = 'data.ini'
-arp_file       = 'arp/arp.dat'
-dhcp_file      = 'dhcp/dhcpd.conf'
 
 ####################################################
 
@@ -36,11 +32,16 @@ dhcp_file      = 'dhcp/dhcpd.conf'
 ####################################################
 
 parser = argparse.ArgumentParser()
-#parser.add_argument("address_file", help="CSV file containing the list of names and addresses")
-#parser.add_argument("message_file", help="text file (with tokens) containing the email body text")
+# positional arguments
+parser.add_argument("netaddress", help="IPv4 network address")
+parser.add_argument("netmask", help="IPv4 network mask, in CIDR 'slash' notation")
+parser.add_argument("domain", help="default DNS domain name for hosts")
+parser.add_argument("arp_file", help="the arp.dat file from arpwatch (typically /var/lib/arpwatch/arp.dat)")
+parser.add_argument("dhcp_file", help="the dhcpd.conf file (typically /etc/dhcpd/dhcpd.conf)")
+# options
 parser.add_argument("-v", "--verbose", help="increase output verbosity",
                     action="store_true")
-parser.add_argument("-d", "--dhcphostnames", help="check for hostnames in DHCP which don't resolve",
+parser.add_argument("-d", "--dhcp_hostnames", help="check for hostnames in DHCP which don't resolve",
                     action="store_true")
 parser.add_argument("-e", "--errors", help="display parsing and resolution errors",
                     action="store_true")
@@ -58,29 +59,26 @@ def main():
     # list of error messages
     error_list = []
 
-    # read the config file
-    config = parse_config()
-
     # read the arp entries
-    arp_entries = parse_arp_file(arp_file, error_list)
+    arp_entries = parse_arp_file(error_list)
 
     # read the dhcp entries
-    dhcp_entries = parse_dhcp_file(config, dhcp_file, error_list)
+    dhcp_entries = parse_dhcp_file(error_list)
 
     # loop
-    main_report(config, arp_entries, dhcp_entries, error_list)
+    main_report(arp_entries, dhcp_entries, error_list)
 
     if args.errors and len(error_list):
         display_errors(error_list)
 
 
-def main_report(config, arp_entries, dhcp_entries, error_list):
+def main_report(arp_entries, dhcp_entries, error_list):
     'loop over all of the addresses in the range'
 
     # current timestamp
     date_now = datetime.now()
 
-    net = IPNetwork('%s/%s' % (config.get('Network', 'v4address'), config.get('Network', 'v4mask')))
+    net = IPNetwork('%s/%s' % (args.netaddress, args.netmask))
 
     reverse_lookups = {}
     forward_lookups = {}
@@ -164,8 +162,8 @@ def main_report(config, arp_entries, dhcp_entries, error_list):
             resolved_ip = record_error(error_list, 'DNS: forward and reverse lookup mismatch for %s => %s => %s' % (ip, host, resolved_ip))
 
         # do we have a hostname in the dhcp entries? first change to short hostname
-        if host != '-' and host.endswith(config.get('Network', 'domain')):
-            short_host = host[:-len(config.get('Network', 'v4address'))]
+        if host != '-' and host.endswith(args.domain):
+            short_host = host[:-len(args.netaddress)]
             # only print the short hostname if it's in the domain
             host = short_host
 
@@ -206,38 +204,21 @@ def main_report(config, arp_entries, dhcp_entries, error_list):
         print format_str.format(ip, host, resolved_ip, mac_dhcp, mac_arp, ts_arp)
 
 
-# Parse the config
-def parse_config():
-    'Parse the config file'
-
-    config = ConfigParser.RawConfigParser()
-    config.read(config_file)
-
-
-    if args.verbose:
-        print "config:\n"
-        for section in config.sections():
-            print "section name: " + section
-            print config.items(section)
-
-    return config
-
-
 # Parse the dhcpd.conf file
-def parse_dhcp_file(config, dhcp_file, error_list):
+def parse_dhcp_file(error_list):
     'Parse the dhcpd.conf file'
 
     # TODO: exclude blank lines and comments
     dhcp_entries = {}
 
     try:
-        f = open(dhcp_file,'r')
+        f = open(args.dhcp_file,'r')
     except IOError, reason:
         print 'could not open file', str(reason)
         return None
 
     if args.verbose:
-        print "Reading dhcp file " + dhcp_file
+        print "Reading dhcp file " + args.dhcp_file
 
     for fline in f:
         fline = fline.strip()
@@ -258,14 +239,14 @@ def parse_dhcp_file(config, dhcp_file, error_list):
             mac  = canonicalise_mac(matched.group(2), error_list)
 
             # store the short hostname only
-            if host != '-' and host.endswith(config.get('Network', 'domain')):
-                short_host = host[:-len(config.get('Network', 'v4address'))]
+            if host != '-' and host.endswith(args.domain):
+                short_host = host[:-len(args.domain)]
                 host = short_host
 
             # see if the hostname in DHCP still resolves
-            if args.dhcphostnames:
+            if args.dhcp_hostnames:
                 try:
-                    resolved_ip = socket.gethostbyname('%s.%s' % (host, config.get('Network', 'domain')))
+                    resolved_ip = socket.gethostbyname('%s.%s' % (host, args.domain))
 
                 except socket.error:
                     #print "unable to forward look up " + host
@@ -286,18 +267,18 @@ def parse_dhcp_file(config, dhcp_file, error_list):
 
 
 # Parse the arp.dat file
-def parse_arp_file(arp_file, error_list):
+def parse_arp_file(error_list):
     'Parse the arp.dat file'
 
     arp_entries = {}
     try:
-        f = open(arp_file,'r')
+        f = open(args.arp_file,'r')
     except IOError, reason:
         print 'could not open file', str(reason)
         return None
 
     if args.verbose:
-        print "Reading arp file " + arp_file
+        print "Reading arp file " + args.arp_file
 
     for fline in f:
         fline = fline.strip()
