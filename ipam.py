@@ -42,8 +42,8 @@ parser.add_argument("-v", "--verbose", help="increase output verbosity",
                     action="store_true")
 #parser.add_argument("-d", "--dpgt", help="specify that the mails are to be addressed to DPGT",
 #                    action="store_true")
-#parser.add_argument("-s", "--subject", help="parse the config.ini file only, print the subject line, and exit",
-#                    action="store_true")
+parser.add_argument("-e", "--errors", help="display parsing and resolution errors",
+                    action="store_true")
 args = parser.parse_args()
 
 if args.verbose:
@@ -70,7 +70,7 @@ def main():
     # loop
     main_report(config, arp_entries, dhcp_entries, error_list)
 
-    if len(error_list):
+    if args.errors and len(error_list):
         display_errors(error_list)
 
 
@@ -131,12 +131,15 @@ def main_report(config, arp_entries, dhcp_entries, error_list):
     # TODO: split the function here? create a dict of dicts of the entries?
 
 
-    print "\nall records:\n"
+    print "IPAM-Lite Report for %s\n" % net
 
-# IP -> host -> IP (match y/n) -> MAC (DHCP) -> MAC (ARP) -> timestamp (ARP)
-    format_str = '  {0:16} | {1:24} | {2:8} | {3:18} | {4:18} | {5}'
+    # IP -> host -> IP (match y/n) -> MAC (DHCP) -> MAC (ARP) -> timestamp (ARP)
+    format_str = '{0:16} | {1:24} | {2:8} | {3:18} | {4:18} | {5:21}'
+
+    # print the report headers
     print format_str.format('IP', 'Host', 'Host->IP', 'MAC (DHCP)', 'MAC (ARP)', 'Last seen (ARP)')
-    print
+    print format_str.format('-' * 16, '-' * 24, '-' * 8, '-' * 18, '-' * 18, '-' * 21)
+
     for ip in net.iter_hosts():
         ip = str(ip)
 
@@ -331,6 +334,8 @@ def record_error(error_list, message):
 
 def display_errors(error_list):
     'Loop and print from the array'
+
+    print "\nErrors:\n"
 
     for idx,err in enumerate(error_list):
         print 'ERR%-5d %s' % (idx, err)
