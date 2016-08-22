@@ -47,6 +47,8 @@ parser.add_argument("-d", "--dhcp_hostnames", help="check for hostnames in DHCP 
                     action="store_true")
 parser.add_argument("-e", "--errors", help="display parsing and resolution errors",
                     action="store_true")
+parser.add_argument("-f", "--free", help="only display lists of free IP addresses",
+                    action="store_true")
 args = parser.parse_args()
 
 
@@ -57,6 +59,10 @@ args = parser.parse_args()
 def main():
     # list of error messages
     error_list = []
+
+    if args.free:
+        free_addresses_report()
+        return None
 
     # read the arp entries
     arp_entries = parse_arp_file(error_list)
@@ -70,6 +76,51 @@ def main():
     if args.errors and len(error_list):
         display_errors(error_list)
 
+
+def free_addresses_report():
+    'loop over all of the addresses in the range, printing a report of unassigned IP addresses'
+
+    net = IPNetwork('%s/%s' % (args.netaddress, args.netmask))
+
+    unassigned_list_of_lists = []
+
+    count_unassigned = 0
+    prev_ip_in_list = ''
+
+    for ip in net.iter_hosts():
+        ip_str = str(ip)
+
+        # look up the hostname
+        try:
+            res = socket.gethostbyaddr( ip_str )
+
+            # it resolved ok, so clear this var
+            prev_ip_in_list = ''
+
+        except socket.error:
+            #print '%s' % ip
+            count_unassigned += 1
+
+            if not unassigned_list_of_lists or not prev_ip_in_list:
+                # the very first unassigned address, or no prev_ip_in_list
+                unassigned_list_of_lists.append( [ip] )
+            elif prev_ip_in_list and (int(prev_ip_in_list)+1) == int(ip):
+                # we're one address further on from previous one found, so append to the subnet
+                unassigned_list_of_lists[-1].append(ip)
+
+            # move on the saved var
+            prev_ip_in_list = ip
+
+    print 'Unassigned addresses:\n'
+
+    for l in unassigned_list_of_lists:
+        #print "list: %s" % l
+        if len(l) == 1:
+            print '%4d: %-16s' % (1, l[0])
+        else:
+            print '%4d: %-16s => %-16s' % (len(l), l[0], l[-1])
+
+    print "\nTotal unassigned: %d / %d" % (count_unassigned, (len(net) - 2))
 
 def main_report(arp_entries, dhcp_entries, error_list):
     'loop over all of the addresses in the range, printing a report'
@@ -357,3 +408,5 @@ def canonicalise_mac(mac_str, error_list):
 if __name__ == '__main__':
     main()
 
+
+# vim: tabstop=4 expandtab
