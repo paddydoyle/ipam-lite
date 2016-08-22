@@ -32,6 +32,7 @@ from datetime import date
 # read the filenames from cmd-line
 ####################################################
 
+# don't you just love argparse!!
 parser = argparse.ArgumentParser()
 # positional arguments
 parser.add_argument("netaddress", help="IPv4 network address")
@@ -47,9 +48,6 @@ parser.add_argument("-d", "--dhcp_hostnames", help="check for hostnames in DHCP 
 parser.add_argument("-e", "--errors", help="display parsing and resolution errors",
                     action="store_true")
 args = parser.parse_args()
-
-if args.verbose:
-   print "verbosity turned on"
 
 
 
@@ -74,7 +72,7 @@ def main():
 
 
 def main_report(arp_entries, dhcp_entries, error_list):
-    'loop over all of the addresses in the range'
+    'loop over all of the addresses in the range, printing a report'
 
     # current timestamp
     date_now = datetime.now()
