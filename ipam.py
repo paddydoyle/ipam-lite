@@ -116,7 +116,7 @@ def main_report(config, arp_entries, dhcp_entries, error_list):
                 forward_lookups[host] = resolved_ip
             except socket.error:
                 print "unable to forward look up " + host
-                resolved_ip = record_error(error_list, "unable to forward look up " + host)
+                resolved_ip = record_error(error_list, "DNS: unable to forward look up " + host)
 
         #if resolved_ip and ip != resolved_ip:
         #    print "warning: %s != %s" % (ip, resolved_ip)
@@ -161,7 +161,7 @@ def main_report(config, arp_entries, dhcp_entries, error_list):
         elif host == '-':
             resolved_ip = '-'
         else:
-            resolved_ip = record_error(error_list, 'forward and reverse lookup mismatch for %s => %s => %s' % (ip, host, resolved_ip))
+            resolved_ip = record_error(error_list, 'DNS: forward and reverse lookup mismatch for %s => %s => %s' % (ip, host, resolved_ip))
 
         # do we have a hostname in the dhcp entries? first change to short hostname
         if host != '-' and host.endswith(config.get('Network', 'domain')):
@@ -356,7 +356,9 @@ def canonicalise_mac(mac_str, error_list):
     except core.AddrFormatError:
         #print "ERROR: unable to parse '%s' as a MAC address; skipping" % mac_str
         #return ''
-        return record_error(error_list, "unable to parse '%s' as a MAC address; skipping" % mac_str)
+
+        # assuming that the entries in arp.dat will always be validly formed, so MAC issues are dhcp
+        return record_error(error_list, "DHCP: unable to parse '%s' as a MAC address" % mac_str)
 
     # return a string
     return '%s' % mac
