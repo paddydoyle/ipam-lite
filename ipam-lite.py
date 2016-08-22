@@ -47,7 +47,7 @@ parser.add_argument("-d", "--dhcp_hostnames", help="check for hostnames in DHCP 
                     action="store_true")
 parser.add_argument("-e", "--errors", help="display parsing and resolution errors",
                     action="store_true")
-parser.add_argument("-f", "--free", help="only display lists of free IP addresses",
+parser.add_argument("-u", "--unassigned", help="only display lists of unassigned/free IP addresses",
                     action="store_true")
 args = parser.parse_args()
 
@@ -60,8 +60,8 @@ def main():
     # list of error messages
     error_list = []
 
-    if args.free:
-        free_addresses_report()
+    if args.unassigned:
+        unassigned_addresses_report()
         return None
 
     # read the arp entries
@@ -77,7 +77,7 @@ def main():
         display_errors(error_list)
 
 
-def free_addresses_report():
+def unassigned_addresses_report():
     'loop over all of the addresses in the range, printing a report of unassigned IP addresses'
 
     net = IPNetwork('%s/%s' % (args.netaddress, args.netmask))
