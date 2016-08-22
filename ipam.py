@@ -65,7 +65,7 @@ def main():
     arp_entries = parse_arp_file(arp_file, error_list)
 
     # read the dhcp entries
-    dhcp_entries = parse_dhcp_file(dhcp_file, error_list)
+    dhcp_entries = parse_dhcp_file(config, dhcp_file, error_list)
 
     # loop
     main_report(config, arp_entries, dhcp_entries, error_list)
@@ -221,7 +221,7 @@ def parse_config():
 
 
 # Parse the dhcpd.conf file
-def parse_dhcp_file(dhcp_file, error_list):
+def parse_dhcp_file(config, dhcp_file, error_list):
     'Parse the dhcpd.conf file'
 
     # TODO: exclude blank lines and comments
@@ -253,6 +253,11 @@ def parse_dhcp_file(dhcp_file, error_list):
         if matched:
             host = matched.group(1)
             mac  = canonicalise_mac(matched.group(2), error_list)
+
+            # store the short hostname only
+            if host != '-' and host.endswith(config.get('Network', 'domain')):
+                short_host = host[:-len(config.get('Network', 'v4address'))]
+                host = short_host
 
             dhcp_entries[host] = mac;
 
