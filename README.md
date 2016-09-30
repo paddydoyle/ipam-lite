@@ -23,10 +23,10 @@ It does not:
 
 ## Operational notes
 
-* DNS entries are looked up dynamically using ''socket.gethostbyname()'' and
-  ''socket.gethostbyaddr()''.
-* DHCP entries are statically parsed from a ''dhcpd.conf'' file.
-* Arpwatch entries are statically parsed from a ''arp.dat'' file.
+* DNS entries are looked up dynamically using `socket.gethostbyname()` and
+  `socket.gethostbyaddr()`.
+* DHCP entries are statically parsed from a `dhcpd.conf` file.
+* Arpwatch entries are statically parsed from a `arp.dat` file.
 
 ## Report
 
