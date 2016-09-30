@@ -134,7 +134,7 @@ Report of unassigned IP addresses (no hostnames):
 * highlight mismatch between MAC address in DHCP and last reported MAC in
   Arpwatch
 * make the Arpwatch parts of the report optional
-* nicely highlight ``old'' hosts; those with no recent Arpwatch entry (for
-  some value of ``recent'')
+* nicely highlight *old* hosts; those with no recent Arpwatch entry (for
+  some value of *recent*)
 * IPv6 support
 
