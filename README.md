@@ -21,6 +21,13 @@ It does not:
 * operate a full IPAM system, with a managed database populating DNS and DHCP
 * perform any editing or fixing of issues
 
+## Operational notes
+
+* DNS entries are looked up dynamically using ''socket.gethostbyname()'' and
+  ''socket.gethostbyaddr()''.
+* DHCP entries are statically parsed from a ''dhcpd.conf'' file.
+* Arpwatch entries are statically parsed from a ''arp.dat'' file.
+
 ## Report
 
 It highlights some basic errors which might creep into a non-IPAM-managed setup:
