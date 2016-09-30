@@ -1,10 +1,6 @@
 #!/usr/bin/env python
 
-import smtplib
 import re
-import sys
-import subprocess
-import ConfigParser
 from datetime import date
 import argparse
 from netaddr import EUI
