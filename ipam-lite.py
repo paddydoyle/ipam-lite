@@ -107,14 +107,15 @@ def unassigned_addresses_report():
             # move on the saved var
             prev_ip_in_list = ip
 
-    print 'Unassigned addresses:\n'
+    print 'Unassigned address blocks:\n'
+    print 'Count: Range'
 
     for l in unassigned_list_of_lists:
         #print "list: %s" % l
         if len(l) == 1:
-            print '%4d: %-16s' % (1, l[0])
+            print '%5d: %-16s' % (1, l[0])
         else:
-            print '%4d: %-16s => %-16s' % (len(l), l[0], l[-1])
+            print '%5d: %-16s => %-16s' % (len(l), l[0], l[-1])
 
     print "\nTotal unassigned: %d / %d" % (count_unassigned, (len(net) - 2))
 
@@ -254,7 +255,6 @@ def main_report(arp_entries, dhcp_entries, error_list):
 def parse_dhcp_file(error_list):
     'Parse the dhcpd.conf file'
 
-    # TODO: exclude blank lines and comments
     dhcp_entries = {}
 
     try:
