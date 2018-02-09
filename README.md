@@ -36,14 +36,17 @@ It highlights some basic errors which might creep into a non-IPAM-managed setup:
   in DNS)
 * malformed MAC address in DHCP
 * hostnames in DHCP which don't resolve
+* filter out IP addresses for which there are no ARP entries
+* filter out IP addresses for which the ARP entries are older than a given number
 
 It can also print a compressed report of unassigned IP addresses in the range.
 
 ## Usage
 
     $ ./ipam-lite.py -h
-    usage: ipam-lite.py [-h] [-v] [-d] [-e] [-u] netaddress netmask domain arp_file dhcp_file
-
+    usage: ipam-lite.py [-h] [-v] [-d] [-e] [-u] [-n] [-N NO_ARP_DAYS]
+                        netaddress netmask domain arp_file dhcp_file
+    
     positional arguments:
       netaddress            IPv4 network address
       netmask               IPv4 network mask, in CIDR 'slash' notation
@@ -58,6 +61,10 @@ It can also print a compressed report of unassigned IP addresses in the range.
       -d, --dhcp_hostnames  check for hostnames in DHCP which don't resolve
       -e, --errors          display parsing and resolution errors
       -u, --unassigned      only display lists of unassigned/free IP addresses
+      -n, --no_arp          only display list of IP addresses with no ARP entries
+      -N NO_ARP_DAYS, --no_arp_days NO_ARP_DAYS
+                            only display list of IP addresses with no ARP entries
+                            in the last N days
 
 ## Examples
 
@@ -86,6 +93,10 @@ It can also print a compressed report of unassigned IP addresses in the range.
     10.20.112.19     | node008                  | OK       | -                  | 55:55:55:55:55:b1  | 2016-08-18 [42 days] 
     10.20.112.20     | node009                  | OK       | [ SAME AS ARP ]    | 55:55:55:55:55:9d  | 2016-03-06 [207 days]
     ....
+    Total addresses in the range:          1022
+    Total addresses with hostnames:         272
+    Total without ARP entries:              139
+
 
 
 Report of unassigned IP addresses (no hostnames):
@@ -141,7 +152,5 @@ Report of unassigned IP addresses (no hostnames):
 * highlight mismatch between MAC address in DHCP and last reported MAC in
   Arpwatch
 * make the Arpwatch parts of the report optional
-* nicely highlight *old* hosts; those with no recent Arpwatch entry (for
-  some value of *recent*)
 * IPv6 support
 
