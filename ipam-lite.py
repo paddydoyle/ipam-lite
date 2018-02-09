@@ -45,6 +45,10 @@ parser.add_argument("-e", "--errors", help="display parsing and resolution error
                     action="store_true")
 parser.add_argument("-u", "--unassigned", help="only display lists of unassigned/free IP addresses",
                     action="store_true")
+parser.add_argument("-n", "--no_arp", help="only display list of IP addresses with no ARP entries",
+                    action="store_true")
+parser.add_argument("-N", "--no_arp_days", help="only display list of IP addresses with no ARP entries in the last N days",
+                    type=int)
 args = parser.parse_args()
 
 
@@ -56,6 +60,7 @@ def main():
     # list of error messages
     error_list = []
 
+    # short report: just the ranges of unassigned addresses
     if args.unassigned:
         unassigned_addresses_report()
         return None
@@ -86,7 +91,7 @@ def unassigned_addresses_report():
     for ip in net.iter_hosts():
         ip_str = str(ip)
 
-        # look up the hostname
+        # try to resolve the IP address
         try:
             res = socket.gethostbyaddr( ip_str )
 
@@ -130,6 +135,10 @@ def main_report(arp_entries, dhcp_entries, error_list):
     reverse_lookups = {}
     forward_lookups = {}
 
+    count_assigned = 0
+    count_no_arp   = 0
+    count_old_arp  = 0
+
     for ip in net.iter_hosts():
         ip = str(ip)
 
@@ -139,7 +148,7 @@ def main_report(arp_entries, dhcp_entries, error_list):
         host = ''
         resolved_ip = ''
 
-        # look up the hostname
+        # try to resolve the IP address
         try:
             res = socket.gethostbyaddr( ip )
 
@@ -149,11 +158,13 @@ def main_report(arp_entries, dhcp_entries, error_list):
             host = res[0]
             reverse_lookups[ip] = host
 
+            count_assigned += 1
+
         except socket.error:
             if args.verbose:
                 print "unable to reverse look up " + ip
 
-        # now resolve the IP
+        # now try to resolve the hostname
         if host:
             try:
                 resolved_ip = socket.gethostbyname(host)
@@ -177,6 +188,11 @@ def main_report(arp_entries, dhcp_entries, error_list):
 
 
     print "IPAM-Lite Report for %s\n" % net
+
+    if args.no_arp:
+        print "Filtering the report to show IP address with no ARP entries\n"
+    if args.no_arp_days:
+        print "Filtering the report to show IP address with no ARP entries in the past %d days\n" % (args.no_arp_days)
 
     # IP -> host -> IP (match y/n) -> MAC (DHCP) -> MAC (ARP) -> timestamp (ARP)
     format_str = '{0:16} | {1:24} | {2:8} | {3:18} | {4:18} | {5:21}'
@@ -242,13 +258,34 @@ def main_report(arp_entries, dhcp_entries, error_list):
             #ts_arp = date_arp.strftime('%Y-%m-%d %H:%M:%S')
             ts_arp = date_arp.strftime('%Y-%m-%d')
 
+            count_no_arp += 1
+
             delta = date_now - date_arp
             # TODO: configurable parameter of how many days?
             if delta.days > 1:
                 ts_arp += ' [%d days]' % delta.days
 
-        #print '  {0:16} | {1:30} | {2:4}'.format(ip, host, resolved_ip)
-        print format_str.format(ip, host, resolved_ip, mac_dhcp, mac_arp, ts_arp)
+                if delta.days > args.no_arp_days:
+                  count_old_arp += 1
+
+        # any restrictions on the printing? limit to ones with no arp entries?
+        if args.no_arp and ts_arp == '-':
+            #print '  {0:16} | {1:30} | {2:4}'.format(ip, host, resolved_ip)
+            print format_str.format(ip, host, resolved_ip, mac_dhcp, mac_arp, ts_arp)
+        elif args.no_arp_days and delta.days > args.no_arp_days:
+            #print '  {0:16} | {1:30} | {2:4}'.format(ip, host, resolved_ip)
+            print format_str.format(ip, host, resolved_ip, mac_dhcp, mac_arp, ts_arp)
+        elif not args.no_arp and not args.no_arp_days:
+            # no restrictions, print everything
+            #print '  {0:16} | {1:30} | {2:4}'.format(ip, host, resolved_ip)
+            print format_str.format(ip, host, resolved_ip, mac_dhcp, mac_arp, ts_arp)
+
+    print ""
+    print "Total addresses in the range:          %4d" % (len(net) - 2)
+    print "Total addresses with hostnames:        %4d" % (count_assigned)
+    print "Total without ARP entries:             %4d" % (count_no_arp)
+    if args.no_arp_days:
+        print "Total ARP entries older than %d days: %4d" % (args.no_arp_days, count_old_arp)
 
 
 # Parse the dhcpd.conf file
@@ -336,7 +373,7 @@ def parse_arp_file(error_list):
             continue
 
         #addr_list.append(fline.split(','))
-        # 2:0:ac:10:1:f 134.226.115.150 1444404183  dri-guest020
+        # 2:0:bd:10:3:f 10.15.115.150 1444404183  nmi-guest020
         entry_list = fline.split()
 
         mac  = canonicalise_mac(entry_list[0], error_list)
