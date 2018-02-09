@@ -99,7 +99,6 @@ def unassigned_addresses_report():
             prev_ip_in_list = ''
 
         except socket.error:
-            #print '%s' % ip
             count_unassigned += 1
 
             if not unassigned_list_of_lists or not prev_ip_in_list:
@@ -116,7 +115,6 @@ def unassigned_addresses_report():
     print 'Count: Range'
 
     for l in unassigned_list_of_lists:
-        #print "list: %s" % l
         if len(l) == 1:
             print '%5d: %-16s' % (1, l[0])
         else:
@@ -174,15 +172,6 @@ def main_report(arp_entries, dhcp_entries, error_list):
                 #print "unable to forward look up " + host
                 resolved_ip = record_error(error_list, "DNS: unable to forward look up " + host)
 
-        #if resolved_ip and ip != resolved_ip:
-        #    print "warning: %s != %s" % (ip, resolved_ip)
-
-    #print "\nall forward lookups:\n"
-    #for host in forward_lookups:
-    #    print '  {0:20} ==> {1:20}'.format(host, forward_lookups[host])
-
-    #for ip in reverse_lookups:
-    #    print '  {0:20} ==> {1:20}'.format(ip, reverse_lookups[ip])
 
     # TODO: split the function here? create a dict of dicts of the entries?
 
@@ -255,7 +244,6 @@ def main_report(arp_entries, dhcp_entries, error_list):
 
         if ts_arp != '-':
             date_arp = datetime.fromtimestamp(int(ts_arp))
-            #ts_arp = date_arp.strftime('%Y-%m-%d %H:%M:%S')
             ts_arp = date_arp.strftime('%Y-%m-%d')
 
             count_no_arp += 1
@@ -270,14 +258,11 @@ def main_report(arp_entries, dhcp_entries, error_list):
 
         # any restrictions on the printing? limit to ones with no arp entries?
         if args.no_arp and ts_arp == '-':
-            #print '  {0:16} | {1:30} | {2:4}'.format(ip, host, resolved_ip)
             print format_str.format(ip, host, resolved_ip, mac_dhcp, mac_arp, ts_arp)
         elif args.no_arp_days and delta.days > args.no_arp_days:
-            #print '  {0:16} | {1:30} | {2:4}'.format(ip, host, resolved_ip)
             print format_str.format(ip, host, resolved_ip, mac_dhcp, mac_arp, ts_arp)
         elif not args.no_arp and not args.no_arp_days:
             # no restrictions, print everything
-            #print '  {0:16} | {1:30} | {2:4}'.format(ip, host, resolved_ip)
             print format_str.format(ip, host, resolved_ip, mac_dhcp, mac_arp, ts_arp)
 
     print ""
@@ -313,8 +298,7 @@ def parse_dhcp_file(error_list):
             continue
 
         # try match the main regex
-        # host tcin01 { hardware ethernet 00:30:48:7c:9b:ee;
-        #matched = re.match('^\s*host\s+(\S+) \{\s*hardware\s*ethernet\s*(\S+)',fline)
+        # host foo01 { hardware ethernet 01:33:48:7c:9b:ae;
         matched = re.match('^\s*host\s+(\S+) \{\s*hardware\s*ethernet\s*([0-9a-fA-F:]+)',fline)
 
         if matched:
@@ -342,9 +326,6 @@ def parse_dhcp_file(error_list):
                 print "%s => %s" % (host, mac)
 
     f.close()
-
-    #for e in dhcp_entries:
-    #    print '%s => %s' % (e, str(dhcp_entries[e]))
 
     return dhcp_entries
 
@@ -394,9 +375,6 @@ def parse_arp_file(error_list):
 
     f.close()
 
-    #for e in arp_entries:
-    #    print '%s => %s' % (e, str(dhcp_entries[e]))
-
     return arp_entries
 
 
@@ -428,9 +406,6 @@ def canonicalise_mac(mac_str, error_list):
         #mac.dialect = mac_unix_expanded
         #mac.dialect = mac_unix
     except core.AddrFormatError:
-        #print "ERROR: unable to parse '%s' as a MAC address; skipping" % mac_str
-        #return ''
-
         # assuming that the entries in arp.dat will always be validly formed, so MAC issues are dhcp
         return record_error(error_list, "DHCP: unable to parse '%s' as a MAC address" % mac_str)
 
