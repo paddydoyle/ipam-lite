@@ -122,20 +122,18 @@ def unassigned_addresses_report():
 
     print "\nTotal unassigned: %d / %d" % (count_unassigned, (len(net) - 2))
 
-def main_report(arp_entries, dhcp_entries, error_list):
+def resolve_entries_via_lookup(net, error_list):
     'loop over all of the addresses in the range, printing a report'
 
     # current timestamp
     date_now = datetime.now()
 
-    net = IPNetwork('%s/%s' % (args.netaddress, args.netmask))
+    #net = IPNetwork('%s/%s' % (args.netaddress, args.netmask))
 
     reverse_lookups = {}
     forward_lookups = {}
 
     count_assigned = 0
-    count_no_arp   = 0
-    count_old_arp  = 0
 
     for ip in net.iter_hosts():
         ip = str(ip)
@@ -170,10 +168,41 @@ def main_report(arp_entries, dhcp_entries, error_list):
                 forward_lookups[host] = resolved_ip
             except socket.error:
                 #print "unable to forward look up " + host
+                # FIXME: put this into forward_lookups?
                 resolved_ip = record_error(error_list, "DNS: unable to forward look up " + host)
 
 
-    # TODO: split the function here? create a dict of dicts of the entries?
+    # return a dict of the three things we want to return:
+    #   count_assigned: int
+    #   reverse_lookups: hash
+    #   forward_lookups: hash
+    return {'count_assigned': count_assigned,
+        'reverse_lookups': reverse_lookups,
+        'forward_lookups': forward_lookups,
+    }
+
+
+def main_report(arp_entries, dhcp_entries, error_list):
+    'loop over all of the addresses in the range, printing a report'
+
+    # current timestamp
+    date_now = datetime.now()
+
+    net = IPNetwork('%s/%s' % (args.netaddress, args.netmask))
+
+    reverse_lookups = {}
+    forward_lookups = {}
+
+    count_assigned = 0
+    count_no_arp   = 0
+    count_old_arp  = 0
+
+    # generate the hashes of resolved DNS entries
+    resolved_entries_dict = resolve_entries_via_lookup(net, error_list)
+
+    count_assigned  = resolved_entries_dict['count_assigned']
+    reverse_lookups = resolved_entries_dict['reverse_lookups']
+    forward_lookups = resolved_entries_dict['forward_lookups']
 
 
     print "IPAM-Lite Report for %s\n" % net
