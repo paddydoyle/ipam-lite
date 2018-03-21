@@ -176,10 +176,11 @@ def resolve_entries_via_lookup(net, error_list):
     #   count_assigned: int
     #   reverse_lookups: hash
     #   forward_lookups: hash
-    return {'count_assigned': count_assigned,
+    return {
+        'count_assigned': count_assigned,
         'reverse_lookups': reverse_lookups,
         'forward_lookups': forward_lookups,
-    }
+        }
 
 
 def main_report(arp_entries, dhcp_entries, error_list):
@@ -205,6 +206,7 @@ def main_report(arp_entries, dhcp_entries, error_list):
     forward_lookups = resolved_entries_dict['forward_lookups']
 
 
+    # print the top header
     print "IPAM-Lite Report for %s\n" % net
 
     if args.no_arp:
@@ -219,6 +221,7 @@ def main_report(arp_entries, dhcp_entries, error_list):
     print format_str.format('IP', 'Host', 'Host->IP', 'MAC (DHCP)', 'MAC (ARP)', 'Last seen (ARP)')
     print format_str.format('-' * 16, '-' * 24, '-' * 8, '-' * 18, '-' * 18, '-' * 21)
 
+    # main print loop over all the entries in the IP subnet
     for ip in net.iter_hosts():
         ip = str(ip)
 
