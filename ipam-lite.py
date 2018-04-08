@@ -36,6 +36,7 @@ parser.add_argument("netmask", help="IPv4 network mask, in CIDR 'slash' notation
 parser.add_argument("domain", help="default DNS domain name for hosts")
 parser.add_argument("arp_file", help="the arp.dat file from arpwatch (typically /var/lib/arpwatch/arp.dat)")
 parser.add_argument("dhcp_file", help="the dhcpd.conf file (typically /etc/dhcpd/dhcpd.conf)")
+parser.add_argument("dns_file", help="the dumped DNS entries (for example dumped from 'named-compilezone -f raw -F text'), forward and reverse zones in a single file")
 # options
 parser.add_argument("-v", "--verbose", help="increase output verbosity",
                     action="store_true")
@@ -49,7 +50,8 @@ parser.add_argument("-n", "--no_arp", help="only display list of IP addresses wi
                     action="store_true")
 parser.add_argument("-N", "--no_arp_days", help="only display list of IP addresses with no ARP entries in the last N days",
                     type=int)
-parser.add_argument("-r", "--dns_file", help="instead of looking up hostnames on the fly, read entries from a dumped file")
+parser.add_argument("-r", "--resolve", help="look up hostnames on the fly, intead of reading entries from a dumped file",
+                    action="store_true")
 args = parser.parse_args()
 
 
@@ -72,9 +74,9 @@ def main():
     # read the dhcp entries
     dhcp_entries = parse_dhcp_file(error_list)
 
-    # read the dns entries
+    # read the dns entries, unless we're told to resolve on the fly
     dns_entries = []
-    if args.dns_file:
+    if not args.resolve:
         dns_entries = parse_dns_file(error_list)
 
     # loop
@@ -260,7 +262,7 @@ def main_report(arp_entries, dhcp_entries, dns_entries, error_list):
     count_no_arp   = 0
     count_old_arp  = 0
 
-    if args.dns_file:
+    if not args.resolve:
         # parse the DNS records from the flat dns_entries list into the hashes
         resolved_entries_dict = parse_dns_entries(dns_entries, error_list)
     else:
