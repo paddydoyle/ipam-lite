@@ -49,6 +49,7 @@ parser.add_argument("-n", "--no_arp", help="only display list of IP addresses wi
                     action="store_true")
 parser.add_argument("-N", "--no_arp_days", help="only display list of IP addresses with no ARP entries in the last N days",
                     type=int)
+parser.add_argument("-r", "--dns_file", help="instead of looking up hostnames on the fly, read entries from a dumped file")
 args = parser.parse_args()
 
 
@@ -71,8 +72,13 @@ def main():
     # read the dhcp entries
     dhcp_entries = parse_dhcp_file(error_list)
 
+    # read the dns entries
+    dns_entries = []
+    if args.dns_file:
+        dns_entries = parse_dns_file(error_list)
+
     # loop
-    main_report(arp_entries, dhcp_entries, error_list)
+    main_report(arp_entries, dhcp_entries, dns_entries, error_list)
 
     if args.errors and len(error_list):
         display_errors(error_list)
@@ -122,13 +128,9 @@ def unassigned_addresses_report():
 
     print "\nTotal unassigned: %d / %d" % (count_unassigned, (len(net) - 2))
 
-def resolve_entries_via_lookup(net, error_list):
-    'loop over all of the addresses in the range, printing a report'
 
-    # current timestamp
-    date_now = datetime.now()
-
-    #net = IPNetwork('%s/%s' % (args.netaddress, args.netmask))
+def resolve_dns_entries_via_lookup(net, error_list):
+    'loop over all of the addresses in the range, generating forward and reverse hashes'
 
     reverse_lookups = {}
     forward_lookups = {}
@@ -171,6 +173,66 @@ def resolve_entries_via_lookup(net, error_list):
                 # FIXME: put this into forward_lookups?
                 resolved_ip = record_error(error_list, "DNS: unable to forward look up " + host)
 
+    # return a dict of the three things we want to return:
+    #   count_assigned: int
+    #   reverse_lookups: hash
+    #   forward_lookups: hash
+    return {
+        'count_assigned': count_assigned,
+        'reverse_lookups': reverse_lookups,
+        'forward_lookups': forward_lookups,
+        }
+
+
+def parse_dns_entries(dns_entries, error_list):
+    'parse the dns entries from the list, generating forward and reverse hashes'
+
+    reverse_lookups = {}
+    forward_lookups = {}
+
+    count_assigned = 0
+
+    for line in dns_entries:
+
+        # each line will be either:
+        # machine1.foo.com.                        1800 IN A         10.20.112.113
+        # 113.112.20.10.in-addr.arpa.              1800 IN PTR       machine1.foo.com.
+
+        matched = re.match('^(\S+)\s+\d+\s+IN\s+(\S+)\s+(.*)',line)
+
+        if matched:
+            dns_name  = matched.group(1)
+            dns_type  = matched.group(2)
+            dns_rdata = matched.group(3)
+
+            if dns_type == 'A':
+                # machine1.foo.com.                        1800 IN A         10.20.112.113
+
+                # strip the trailing '.'
+                if dns_name.endswith('.'):
+                    dns_name = dns_name[:-1]
+
+                forward_lookups[dns_name] = dns_rdata
+
+            elif dns_type == 'PTR':
+                # 113.112.20.10.in-addr.arpa.              1800 IN PTR       machine1.foo.com.
+
+                # reverse the octets to retrieve the IP address
+                octets = dns_name.split('.')[0:4]
+                octets.reverse()
+                ip = '.'.join(octets)
+
+                # strip the trailing '.'
+                if dns_rdata.endswith('.'):
+                    dns_rdata = dns_rdata[:-1]
+
+                reverse_lookups[ip] = dns_rdata
+
+                count_assigned += 1
+            else:
+                record_error(error_list, "DNS: unexpected RR type: " + dns_type)
+        else:
+            record_error(error_list, "DNS: to parse DNS entry: " + line)
 
     # return a dict of the three things we want to return:
     #   count_assigned: int
@@ -183,7 +245,7 @@ def resolve_entries_via_lookup(net, error_list):
         }
 
 
-def main_report(arp_entries, dhcp_entries, error_list):
+def main_report(arp_entries, dhcp_entries, dns_entries, error_list):
     'loop over all of the addresses in the range, printing a report'
 
     # current timestamp
@@ -198,8 +260,12 @@ def main_report(arp_entries, dhcp_entries, error_list):
     count_no_arp   = 0
     count_old_arp  = 0
 
-    # generate the hashes of resolved DNS entries
-    resolved_entries_dict = resolve_entries_via_lookup(net, error_list)
+    if args.dns_file:
+        # parse the DNS records from the flat dns_entries list into the hashes
+        resolved_entries_dict = parse_dns_entries(dns_entries, error_list)
+    else:
+        # generate the hashes of resolved DNS entries
+        resolved_entries_dict = resolve_dns_entries_via_lookup(net, error_list)
 
     count_assigned  = resolved_entries_dict['count_assigned']
     reverse_lookups = resolved_entries_dict['reverse_lookups']
@@ -360,6 +426,62 @@ def parse_dhcp_file(error_list):
     f.close()
 
     return dhcp_entries
+
+
+# Parse the exported dns file
+def parse_dns_file(error_list):
+    'Parse the exported dns file'
+
+    dns_entries = []
+
+    try:
+        f = open(args.dns_file,'r')
+    except IOError, reason:
+        print 'could not open file', str(reason)
+        return None
+
+    if args.verbose:
+        print "Reading dns file " + args.dns_file
+
+    for fline in f:
+        fline = fline.strip()
+
+        # shouldn't be any comments or blank links in a dumped dns file, but just in case
+        if re.match('^$',fline):
+            #print 'skipped a blank line'
+            continue
+        elif re.match('^\s*#',fline):
+            #print 'skipped a comment line'
+            continue
+
+        # parse either a forward A record, or reverse PTR record
+        # ignore other record types
+        # no guarantee at all on the ordering of the dump file (might be lexical)
+        # machine1.foo.com.                        1800 IN A         10.20.112.113
+        # 113.112.20.10.in-addr.arpa.              1800 IN PTR       machine1.foo.com.
+        # FIXME: do we care about RRs with multiple values, e.g. round-robin A records?
+        matched = re.match('^(\S+)\s+\d+\s+IN\s+(\S+)\s+(.*)',fline)
+
+        if matched:
+            dns_name  = matched.group(1)
+            dns_type  = matched.group(2)
+            dns_rdata = matched.group(3)
+
+            # choosing not to process further into forward_lookups and reverse_lookups
+            # here; we could, but then the return values from this function would be
+            # propagated too early in the main function, and change up the code too
+            # much. instead, put all of the lines into the list and return that for
+            # processing later.
+
+            if dns_type == 'A' or dns_type == 'PTR':
+                dns_entries.append(fline)
+
+                if args.verbose:
+                    print "%s => %s => %s" % (dns_name, dns_type, dns_rdata)
+
+    f.close()
+
+    return dns_entries
 
 
 # Parse the arp.dat file
