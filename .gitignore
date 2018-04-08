@@ -2,4 +2,5 @@
 
 *.dat
 *.conf
+*.pyc
 db.*
