@@ -13,7 +13,7 @@ from datetime import datetime
 from datetime import date
 
 ##############################################################################
-# ipam-lite
+# ipam_lite
 # 2016-08-22 paddy@tchpc.tcd.ie
 # For a given (IPv4) subnet, resolve the IP addresses and hostnames, looking
 # for simple errors. Additionally, parse dhcpd.conf and arp.dat looking for
@@ -23,36 +23,6 @@ from datetime import date
 ##############################################################################
 
 
-
-####################################################
-# read the filenames from cmd-line
-####################################################
-
-# don't you just love argparse!!
-parser = argparse.ArgumentParser()
-# positional arguments
-parser.add_argument("netaddress", help="IPv4 network address")
-parser.add_argument("netmask", help="IPv4 network mask, in CIDR 'slash' notation")
-parser.add_argument("domain", help="default DNS domain name for hosts")
-parser.add_argument("arp_file", help="the arp.dat file from arpwatch (typically /var/lib/arpwatch/arp.dat)")
-parser.add_argument("dhcp_file", help="the dhcpd.conf file (typically /etc/dhcpd/dhcpd.conf)")
-parser.add_argument("dns_file", help="the dumped DNS entries (for example dumped from 'named-compilezone -f raw -F text'), forward and reverse zones in a single file")
-# options
-parser.add_argument("-v", "--verbose", help="increase output verbosity",
-                    action="store_true")
-parser.add_argument("-d", "--dhcp_hostnames", help="check for hostnames in DHCP which don't resolve",
-                    action="store_true")
-parser.add_argument("-e", "--errors", help="display parsing and resolution errors",
-                    action="store_true")
-parser.add_argument("-u", "--unassigned", help="only display lists of unassigned/free IP addresses",
-                    action="store_true")
-parser.add_argument("-n", "--no_arp", help="only display list of IP addresses with no ARP entries",
-                    action="store_true")
-parser.add_argument("-N", "--no_arp_days", help="only display list of IP addresses with no ARP entries in the last N days",
-                    type=int)
-parser.add_argument("-r", "--resolve", help="look up hostnames on the fly, intead of reading entries from a dumped file",
-                    action="store_true")
-args = parser.parse_args()
 
 
 
@@ -570,6 +540,40 @@ def canonicalise_mac(mac_str, error_list):
 
 
 if __name__ == '__main__':
+
+    ####################################################
+    # read the filenames from cmd-line
+    ####################################################
+
+    # don't you just love argparse!!
+    parser = argparse.ArgumentParser()
+    # positional arguments
+    parser.add_argument("netaddress", help="IPv4 network address")
+    parser.add_argument("netmask", help="IPv4 network mask, in CIDR 'slash' notation")
+    parser.add_argument("domain", help="default DNS domain name for hosts")
+    parser.add_argument("arp_file", help="the arp.dat file from arpwatch (typically /var/lib/arpwatch/arp.dat)")
+    parser.add_argument("dhcp_file", help="the dhcpd.conf file (typically /etc/dhcpd/dhcpd.conf)")
+    parser.add_argument("dns_file", help="the dumped DNS entries (for example dumped from 'named-compilezone -f raw -F text'), forward and reverse zones in a single file")
+    # options
+    parser.add_argument("-v", "--verbose", help="increase output verbosity",
+                        action="store_true")
+    parser.add_argument("-d", "--dhcp_hostnames", help="check for hostnames in DHCP which don't resolve",
+                        action="store_true")
+    parser.add_argument("-e", "--errors", help="display parsing and resolution errors",
+                        action="store_true")
+    parser.add_argument("-u", "--unassigned", help="only display lists of unassigned/free IP addresses",
+                        action="store_true")
+    parser.add_argument("-n", "--no_arp", help="only display list of IP addresses with no ARP entries",
+                        action="store_true")
+    parser.add_argument("-N", "--no_arp_days", help="only display list of IP addresses with no ARP entries in the last N days",
+                        type=int)
+    parser.add_argument("-r", "--resolve", help="look up hostnames on the fly, intead of reading entries from a dumped file",
+                        action="store_true")
+    args = parser.parse_args()
+
+    ####################################################
+    # call main
+    ####################################################
     main()
 
 
