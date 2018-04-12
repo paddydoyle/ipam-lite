@@ -285,7 +285,8 @@ def main_report(arp_entries, dhcp_entries, dns_entries, error_list):
 
         # do we have a hostname in the dhcp entries? first change to short hostname
         if host != '-' and host.endswith(args.domain):
-            short_host = host[:-len(args.netaddress)]
+            # add 1 to also remove the '.' between host and domain
+            short_host = host[:-(len(args.domain)+1)]
             # only print the short hostname if it's in the domain
             host = short_host
 
