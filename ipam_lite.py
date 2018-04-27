@@ -313,6 +313,9 @@ def main_report(arp_entries, dhcp_entries, dns_entries, error_list):
         if mac_dhcp != '-' and mac_dhcp == mac_arp:
             mac_dhcp = "[ SAME AS ARP ]"
 
+        # reset, because of conditional update below
+        delta = None
+
         if ts_arp != '-':
             date_arp = datetime.fromtimestamp(int(ts_arp))
             ts_arp = date_arp.strftime('%Y-%m-%d')
@@ -330,7 +333,7 @@ def main_report(arp_entries, dhcp_entries, dns_entries, error_list):
         # any restrictions on the printing? limit to ones with no arp entries?
         if args.no_arp and ts_arp == '-':
             print format_str.format(ip, host, resolved_ip, mac_dhcp, mac_arp, ts_arp)
-        elif args.no_arp_days and delta.days > args.no_arp_days:
+        elif args.no_arp_days and delta and delta.days > args.no_arp_days:
             print format_str.format(ip, host, resolved_ip, mac_dhcp, mac_arp, ts_arp)
         elif not args.no_arp and not args.no_arp_days:
             # no restrictions, print everything
