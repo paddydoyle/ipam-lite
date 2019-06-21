@@ -379,6 +379,11 @@ def parse_dhcp_file(error_list):
             host = matched.group(1)
             mac = canonicalise_mac(matched.group(2), error_list)
 
+            if not mac:
+                mac = record_error(error_list,
+                                   "DHCP: unable to parse '%s' as a MAC address for %s"
+                                   % (matched.group(2), host))
+
             # store the short hostname only
             if host != '-' and host.endswith(args.domain):
                 short_host = host[:-len(args.domain)]
@@ -488,6 +493,12 @@ def parse_arp_file(error_list):
         entry_list = fline.split()
 
         mac = canonicalise_mac(entry_list[0], error_list)
+
+        if not mac:
+            mac = record_error(error_list,
+                               "ARP: unable to parse '%s' as a MAC address for %s"
+                               % (entry_list[0], entry_list[1]))
+
         ip = entry_list[1]
         ts = entry_list[2]
         host = entry_list[3] if len(entry_list) > 3 else ''
@@ -538,8 +549,7 @@ def canonicalise_mac(mac_str, error_list):
         #mac.dialect = mac_unix_expanded
         #mac.dialect = mac_unix
     except core.AddrFormatError:
-        # assuming that the entries in arp.dat will always be validly formed, so MAC issues are dhcp
-        return record_error(error_list, "DHCP: unable to parse '%s' as a MAC address" % mac_str)
+        return ""
 
     # return a string
     return '%s' % mac
