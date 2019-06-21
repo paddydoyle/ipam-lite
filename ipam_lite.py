@@ -110,7 +110,7 @@ def resolve_dns_entries_via_lookup(net, error_list):
         ip = str(ip)
 
         if args.verbose:
-            print '%s' % ip
+            print str(ip)
 
         host = ''
         resolved_ip = ''
@@ -504,7 +504,7 @@ def parse_arp_file(error_list):
         host = entry_list[3] if len(entry_list) > 3 else ''
 
         if args.verbose:
-            print '%s' % entry_list
+            print str(entry_list)
 
         # check for duplicate entries for the IP address; only store the most recent
         if not ip in arp_entries or int(arp_entries[ip]['ts']) < int(ts):
@@ -552,7 +552,7 @@ def canonicalise_mac(mac_str, error_list):
         return ""
 
     # return a string
-    return '%s' % mac
+    return str(mac)
 
 
 if __name__ == '__main__':
