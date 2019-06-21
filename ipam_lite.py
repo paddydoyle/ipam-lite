@@ -49,7 +49,7 @@ def main():
     # loop
     main_report(arp_entries, dhcp_entries, dns_entries, error_list)
 
-    if args.errors and len(error_list):
+    if args.errors and error_list:
         display_errors(error_list)
 
 
