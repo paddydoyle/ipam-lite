@@ -30,8 +30,16 @@ def main():
     # list of error messages
     error_list = []
 
+    # read the dns entries, unless we're told to resolve on the fly
+    dns_entries = []
+    if not args.resolve:
+        dns_entries = parse_dns_file(error_list)
+
+    # TODO: parse or resolve the DNS before calling the unassigned report
+
     # short report: just the ranges of unassigned addresses
     if args.unassigned:
+        # TODO: pass dns_entries here
         unassigned_addresses_report()
         return None
 
@@ -41,11 +49,6 @@ def main():
     # read the dhcp entries
     dhcp_entries = parse_dhcp_file(error_list)
 
-    # read the dns entries, unless we're told to resolve on the fly
-    dns_entries = []
-    if not args.resolve:
-        dns_entries = parse_dns_file(error_list)
-
     # loop
     main_report(arp_entries, dhcp_entries, dns_entries, error_list)
 
@@ -53,8 +56,9 @@ def main():
         display_errors(error_list)
 
 
-def unassigned_addresses_report():
+def unassigned_addresses_report(dns_entries):
     'loop over all of the addresses in the range, printing a report of unassigned IP addresses'
+    # TODO: split into two functions: work and report
 
     net = IPNetwork('%s/%s' % (args.netaddress, args.netmask))
 
@@ -146,6 +150,7 @@ def resolve_dns_entries_via_lookup(net, error_list):
     #   count_assigned: int
     #   reverse_lookups: hash
     #   forward_lookups: hash
+    # TODO: change this to a tuple; we consume them immediately
     return {
         'count_assigned': count_assigned,
         'reverse_lookups': reverse_lookups,
@@ -207,6 +212,7 @@ def parse_dns_entries(dns_entries, error_list):
     #   count_assigned: int
     #   reverse_lookups: hash
     #   forward_lookups: hash
+    # TODO: change this to a tuple; we consume them immediately
     return {
         'count_assigned': count_assigned,
         'reverse_lookups': reverse_lookups,
@@ -216,6 +222,7 @@ def parse_dns_entries(dns_entries, error_list):
 
 def main_report(arp_entries, dhcp_entries, dns_entries, error_list):
     'loop over all of the addresses in the range, printing a report'
+    # TODO: split into two functions: work and report
 
     # current timestamp
     date_now = datetime.now()
