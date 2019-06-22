@@ -377,7 +377,7 @@ def parse_dhcp_file(error_list):
 
         if matched:
             host = matched.group(1)
-            mac = canonicalise_mac(matched.group(2), error_list)
+            mac = canonicalise_mac(matched.group(2))
 
             if not mac:
                 mac = record_error(error_list,
@@ -492,7 +492,7 @@ def parse_arp_file(error_list):
         # 2:0:bd:10:3:f 10.15.115.150 1444404183  nmi-guest020
         entry_list = fline.split()
 
-        mac = canonicalise_mac(entry_list[0], error_list)
+        mac = canonicalise_mac(entry_list[0])
 
         if not mac:
             mac = record_error(error_list,
@@ -534,7 +534,7 @@ def display_errors(error_list):
         print 'ERR%-5d %s' % (idx, err)
 
 
-def canonicalise_mac(mac_str, error_list):
+def canonicalise_mac(mac_str):
     'Standardise on the MAC address format'
 
     # the 'mac_unix_expanded' format is only in a later version of the netaddr module
