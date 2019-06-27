@@ -53,7 +53,7 @@ def main():
     main_report(arp_entries, dhcp_entries, dns_entries, error_list)
 
     if args.errors and error_list:
-        display_errors(error_list)
+        error_report(error_list)
 
 
 def unassigned_addresses_report(dns_entries):
@@ -236,12 +236,12 @@ def main_report(arp_entries, dhcp_entries, dns_entries, error_list):
     count_no_arp = 0
     count_old_arp = 0
 
-    if not args.resolve:
+    if args.resolve:
+        # generate the hashes of resolved DNS entries, via live lookup
+        resolved_entries_dict = resolve_dns_entries_via_lookup(net, error_list)
+    else:
         # parse the DNS records from the flat dns_entries list into the hashes
         resolved_entries_dict = parse_dns_entries(dns_entries, error_list)
-    else:
-        # generate the hashes of resolved DNS entries
-        resolved_entries_dict = resolve_dns_entries_via_lookup(net, error_list)
 
     count_assigned = resolved_entries_dict['count_assigned']
     reverse_lookups = resolved_entries_dict['reverse_lookups']
@@ -532,7 +532,7 @@ def record_error(error_list, message):
     return 'ERR%d' % (len(error_list)-1)
 
 
-def display_errors(error_list):
+def error_report(error_list):
     'Loop and print from the array'
 
     print "\nErrors:\n"
