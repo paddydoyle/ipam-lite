@@ -108,8 +108,6 @@ def resolve_dns_entries_via_lookup(net, error_list):
     reverse_lookups = {}
     forward_lookups = {}
 
-    count_assigned = 0
-
     for ip in net.iter_hosts():
         ip = str(ip)
 
@@ -121,7 +119,6 @@ def resolve_dns_entries_via_lookup(net, error_list):
             continue
 
         reverse_lookups[ip] = host
-        count_assigned += 1
 
         # Now try to resolve the hostname
         resolved_ip = dns_forward_lookup(host)
@@ -133,12 +130,10 @@ def resolve_dns_entries_via_lookup(net, error_list):
         forward_lookups[host] = ip
 
     # return a dict of the three things we want to return:
-    #   count_assigned: int
     #   reverse_lookups: hash
     #   forward_lookups: hash
     # TODO: change this to a tuple; we consume them immediately
     return {
-        'count_assigned': count_assigned,
         'reverse_lookups': reverse_lookups,
         'forward_lookups': forward_lookups,
         }
@@ -171,8 +166,6 @@ def parse_dns_entries(dns_entries, error_list):
 
     reverse_lookups = {}
     forward_lookups = {}
-
-    count_assigned = 0
 
     for line in dns_entries:
 
@@ -209,20 +202,16 @@ def parse_dns_entries(dns_entries, error_list):
                     dns_rdata = dns_rdata[:-1]
 
                 reverse_lookups[ip] = dns_rdata
-
-                count_assigned += 1
             else:
                 record_error(error_list, "DNS: unexpected RR type: " + dns_type)
         else:
             record_error(error_list, "DNS: to parse DNS entry: " + line)
 
     # return a dict of the three things we want to return:
-    #   count_assigned: int
     #   reverse_lookups: hash
     #   forward_lookups: hash
     # TODO: change this to a tuple; we consume them immediately
     return {
-        'count_assigned': count_assigned,
         'reverse_lookups': reverse_lookups,
         'forward_lookups': forward_lookups,
         }
@@ -240,7 +229,6 @@ def main_report(arp_entries, dhcp_entries, dns_entries, error_list):
     reverse_lookups = {}
     forward_lookups = {}
 
-    count_assigned = 0
     count_no_arp = 0
     count_old_arp = 0
 
@@ -251,8 +239,8 @@ def main_report(arp_entries, dhcp_entries, dns_entries, error_list):
         # parse the DNS records from the flat dns_entries list into the hashes
         resolved_entries_dict = parse_dns_entries(dns_entries, error_list)
 
-    count_assigned = resolved_entries_dict['count_assigned']
     reverse_lookups = resolved_entries_dict['reverse_lookups']
+    # FIXME: do we need forward_lookups at all? put tuples into reverse_lookups instead?
     forward_lookups = resolved_entries_dict['forward_lookups']
 
 
@@ -356,7 +344,7 @@ def main_report(arp_entries, dhcp_entries, dns_entries, error_list):
 
     print ""
     print "Total addresses in the range:          %4d" % (len(net) - 2)
-    print "Total addresses with hostnames:        %4d" % (count_assigned)
+    print "Total addresses with hostnames:        %4d" % (len(reverse_lookups))
     print "Total without ARP entries:             %4d" % (count_no_arp)
     if args.no_arp_days:
         print "Total ARP entries older than %d days: %4d" % (args.no_arp_days, count_old_arp)
