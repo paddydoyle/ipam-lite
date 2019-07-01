@@ -113,38 +113,24 @@ def resolve_dns_entries_via_lookup(net, error_list):
     for ip in net.iter_hosts():
         ip = str(ip)
 
-        if args.verbose:
-            print str(ip)
+        # Try to resolve the IP address
+        host = dns_reverse_lookup(ip)
 
-        host = ''
-        resolved_ip = ''
+        # Skip forward lookup if the reverse lookup failed.
+        if not host:
+            continue
 
-        # try to resolve the IP address
-        try:
-            res = socket.gethostbyaddr(ip)
+        reverse_lookups[ip] = host
+        count_assigned += 1
 
-            if args.verbose:
-                print "found" + str(res)
+        # Now try to resolve the hostname
+        resolved_ip = dns_forward_lookup(host)
 
-            host = res[0]
-            reverse_lookups[ip] = host
+        if not resolved_ip:
+            record_error(error_list, "DNS: unable to forward look up " + host)
+            continue
 
-            count_assigned += 1
-
-        except socket.error:
-            if args.verbose:
-                print "unable to reverse look up " + ip
-
-        # now try to resolve the hostname
-        if host:
-            try:
-                resolved_ip = socket.gethostbyname(host)
-
-                forward_lookups[host] = resolved_ip
-            except socket.error:
-                #print "unable to forward look up " + host
-                # FIXME: put this into forward_lookups?
-                resolved_ip = record_error(error_list, "DNS: unable to forward look up " + host)
+        forward_lookups[host] = ip
 
     # return a dict of the three things we want to return:
     #   count_assigned: int
@@ -156,6 +142,34 @@ def resolve_dns_entries_via_lookup(net, error_list):
         'reverse_lookups': reverse_lookups,
         'forward_lookups': forward_lookups,
         }
+
+
+def dns_reverse_lookup(ip):
+    "Reverse query of IP Address."
+
+    # try to resolve the IP address
+    try:
+        return socket.gethostbyaddr(ip)[0]
+
+    except socket.error:
+        if args.verbose:
+            print "DNS: unable to reverse look up " + ip
+
+        return ""
+
+
+def dns_forward_lookup(host):
+    "Forward query of IP Address."
+
+    # now try to resolve the hostname
+    try:
+        return socket.gethostbyname(host)
+
+    except socket.error:
+        if args.verbose:
+            print "DNS: unable to forward look up " + host
+
+        return ""
 
 
 def parse_dns_entries(dns_entries, error_list):
@@ -269,16 +283,16 @@ def main_report(arp_entries, dhcp_entries, dns_entries, error_list):
         ip = str(ip)
 
         # did we have a hostname?
-        if ip not in reverse_lookups:
+        if ip in reverse_lookups:
+            host = reverse_lookups[ip]
+        else:
             host = '-'
             resolved_ip = '-'
-        else:
-            host = reverse_lookups[ip]
 
-        if host not in forward_lookups:
-            resolved_ip = '-'
-        else:
+        if host in forward_lookups:
             resolved_ip = forward_lookups[host]
+        else:
+            resolved_ip = '-'
 
         # does the hostname resolve back to the same IP?
         if ip == resolved_ip:
