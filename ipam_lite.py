@@ -152,10 +152,7 @@ def dns_reverse_lookup(ip):
         return socket.gethostbyaddr(ip)[0]
 
     except socket.error:
-        if args.verbose:
-            print "DNS: unable to reverse look up " + ip
-
-        return ""
+        pass
 
 
 def dns_forward_lookup(host):
@@ -166,10 +163,7 @@ def dns_forward_lookup(host):
         return socket.gethostbyname(host)
 
     except socket.error:
-        if args.verbose:
-            print "DNS: unable to forward look up " + host
-
-        return ""
+        pass
 
 
 def parse_dns_entries(dns_entries, error_list):
