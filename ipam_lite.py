@@ -26,14 +26,14 @@ from netaddr import mac_unix
 ####################################################
 # main
 ####################################################
-def main():
+def main(args):
     # list of error messages
     error_list = []
 
     # read the dns entries, unless we're told to resolve on the fly
     dns_entries = []
     if not args.resolve:
-        dns_entries = parse_dns_file(error_list)
+        dns_entries = parse_dns_file(args.dns_file, error_list)
 
     # TODO: parse or resolve the DNS before calling the unassigned report
 
@@ -44,13 +44,14 @@ def main():
         return None
 
     # read the arp entries
-    arp_entries = parse_arp_file(error_list)
+    arp_entries = parse_arp_file(args.arp_file, error_list)
 
     # read the dhcp entries
-    dhcp_entries = parse_dhcp_file(error_list)
+    dhcp_entries = parse_dhcp_file(args.dhcp_file, args.domain,
+                                   args.dhcp_hostnames, error_list)
 
     # loop
-    main_report(arp_entries, dhcp_entries, dns_entries, error_list)
+    main_report(args, arp_entries, dhcp_entries, dns_entries, error_list)
 
     if args.errors and error_list:
         error_report(error_list)
@@ -217,7 +218,7 @@ def parse_dns_entries(dns_entries, error_list):
         }
 
 
-def main_report(arp_entries, dhcp_entries, dns_entries, error_list):
+def main_report(args, arp_entries, dhcp_entries, dns_entries, error_list):
     'loop over all of the addresses in the range, printing a report'
     # TODO: split into two functions: work and report
 
@@ -351,19 +352,16 @@ def main_report(arp_entries, dhcp_entries, dns_entries, error_list):
 
 
 # Parse the dhcpd.conf file
-def parse_dhcp_file(error_list):
+def parse_dhcp_file(dhcp_file, domain, dhcp_hostnames, error_list):
     'Parse the dhcpd.conf file'
 
     dhcp_entries = {}
 
     try:
-        dhcp_file = open(args.dhcp_file, 'r')
+        dhcp_file = open(dhcp_file, 'r')
     except IOError, reason:
         print 'could not open file', str(reason)
         return None
-
-    if args.verbose:
-        print "Reading dhcp file " + args.dhcp_file
 
     for fline in dhcp_file:
         fline = fline.strip()
@@ -388,14 +386,14 @@ def parse_dhcp_file(error_list):
                                    % (matched.group(2), host))
 
             # store the short hostname only
-            if host != '-' and host.endswith(args.domain):
-                short_host = host[:-len(args.domain)]
+            if host != '-' and host.endswith(domain):
+                short_host = host[:-len(domain)]
                 host = short_host
 
             # see if the hostname in DHCP still resolves
-            if args.dhcp_hostnames:
+            if dhcp_hostnames:
                 try:
-                    resolved_ip = socket.gethostbyname('%s.%s' % (host, args.domain))
+                    resolved_ip = socket.gethostbyname('%s.%s' % (host, domain))
 
                 except socket.error:
                     #print "unable to forward look up " + host
@@ -404,28 +402,22 @@ def parse_dhcp_file(error_list):
 
             dhcp_entries[host] = mac
 
-            if args.verbose:
-                print "%s => %s" % (host, mac)
-
     dhcp_file.close()
 
     return dhcp_entries
 
 
 # Parse the exported dns file
-def parse_dns_file(error_list):
+def parse_dns_file(dns_file, error_list):
     'Parse the exported dns file'
 
     dns_entries = []
 
     try:
-        dns_file = open(args.dns_file, 'r')
+        dns_file = open(dns_file, 'r')
     except IOError, reason:
         print 'could not open file', str(reason)
         return None
-
-    if args.verbose:
-        print "Reading dns file " + args.dns_file
 
     for fline in dns_file:
         fline = fline.strip()
@@ -460,27 +452,21 @@ def parse_dns_file(error_list):
             if dns_type == 'A' or dns_type == 'PTR':
                 dns_entries.append(fline)
 
-                if args.verbose:
-                    print "%s => %s => %s" % (dns_name, dns_type, dns_rdata)
-
     dns_file.close()
 
     return dns_entries
 
 
 # Parse the arp.dat file
-def parse_arp_file(error_list):
+def parse_arp_file(arp_file, error_list):
     'Parse the arp.dat file'
 
     arp_entries = {}
     try:
-        arp_file = open(args.arp_file, 'r')
+        arp_file = open(arp_file, 'r')
     except IOError, reason:
         print 'could not open file', str(reason)
         return None
-
-    if args.verbose:
-        print "Reading arp file " + args.arp_file
 
     for fline in arp_file:
         fline = fline.strip()
@@ -505,9 +491,6 @@ def parse_arp_file(error_list):
         ip = entry_list[1]
         ts = entry_list[2]
         host = entry_list[3] if len(entry_list) > 3 else ''
-
-        if args.verbose:
-            print str(entry_list)
 
         # check for duplicate entries for the IP address; only store the most recent
         if not ip in arp_entries or int(arp_entries[ip]['ts']) < int(ts):
@@ -606,7 +589,7 @@ if __name__ == '__main__':
     ####################################################
     # call main
     ####################################################
-    main()
+    main(args)
 
 
 # vim: tabstop=4 expandtab
