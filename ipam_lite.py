@@ -63,7 +63,7 @@ def construct_dns_entries(args, error_list):
         # Generate the dict of resolved DNS entries, via live lookup
         return resolve_dns_entries_via_lookup(net, error_list)
     else:
-        raw_dns_entries = parse_dns_file(args.dns_file, error_list)
+        raw_dns_entries = parse_dns_file(args.dns_file)
 
         # Parse the DNS records from the flat raw_dns_entries list into
         # the dict of DNS entries
@@ -292,11 +292,11 @@ def main_report(args, arp_entries, dhcp_entries, dns_entries, error_list):
         if ip in arp_entries:
             # FIXME: change arp_entries[ip] values to a tuple
             mac_arp = arp_entries[ip]['mac']
-            host_arp = arp_entries[ip]['host']
+            # host_arp = arp_entries[ip]['host']
             ts_arp = arp_entries[ip]['ts']
         else:
             mac_arp = '-'
-            host_arp = '-'
+            # host_arp = '-'
             ts_arp = '-'
 
         # matching MAC addresses?
@@ -379,7 +379,7 @@ def parse_dhcp_file(dhcp_file, domain, dhcp_hostnames, error_list):
             # see if the hostname in DHCP still resolves
             if dhcp_hostnames:
                 try:
-                    resolved_ip = socket.gethostbyname('%s.%s' % (host, domain))
+                    _ = socket.gethostbyname('%s.%s' % (host, domain))
 
                 except socket.error:
                     #print "unable to forward look up " + host
@@ -394,7 +394,7 @@ def parse_dhcp_file(dhcp_file, domain, dhcp_hostnames, error_list):
 
 
 # Parse the exported dns file
-def parse_dns_file(dns_file, error_list):
+def parse_dns_file(dns_file):
     'Parse the exported dns file'
 
     raw_dns_entries = []
@@ -425,9 +425,7 @@ def parse_dns_file(dns_file, error_list):
         matched = re.match(r'^(\S+)\s+\d+\s+IN\s+(\S+)\s+(.*)', fline)
 
         if matched:
-            dns_name = matched.group(1)
             dns_type = matched.group(2)
-            dns_rdata = matched.group(3)
 
             # choosing not to process further into forward_lookups and reverse_lookups
             # here; we could, but then the return values from this function would be
