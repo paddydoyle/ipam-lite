@@ -176,7 +176,7 @@ def parse_dns_entries(raw_dns_entries, error_list):
         # machine1.foo.com.                        1800 IN A         10.20.112.113
         # 113.112.20.10.in-addr.arpa.              1800 IN PTR       machine1.foo.com.
 
-        matched = re.match('^(\S+)\s+\d+\s+IN\s+(\S+)\s+(.*)', line)
+        matched = re.match(r'^(\S+)\s+\d+\s+IN\s+(\S+)\s+(.*)', line)
 
         if matched:
             dns_name = matched.group(1)
@@ -318,7 +318,7 @@ def main_report(args, arp_entries, dhcp_entries, dns_entries, error_list):
                 ts_arp += ' [%d days]' % delta.days
 
                 if delta.days > args.no_arp_days:
-                  count_old_arp += 1
+                    count_old_arp += 1
 
         # any restrictions on the printing? limit to ones with no arp entries?
         if args.no_arp and ts_arp == '-':
@@ -351,16 +351,16 @@ def parse_dhcp_file(dhcp_file, domain, dhcp_hostnames, error_list):
 
     for fline in dhcp_file:
         fline = fline.strip()
-        if re.match('^$', fline):
+        if re.match(r'^$', fline):
             #print 'skipped a blank line'
             continue
-        elif re.match('^\s*#', fline):
+        elif re.match(r'^\s*#', fline):
             #print 'skipped a comment line'
             continue
 
         # try match the main regex
         # host foo01 { hardware ethernet 01:33:48:7c:9b:ae;
-        matched = re.match('^\s*host\s+(\S+) \{\s*hardware\s*ethernet\s*([0-9a-fA-F:]+)', fline)
+        matched = re.match(r'^\s*host\s+(\S+) \{\s*hardware\s*ethernet\s*([0-9a-fA-F:]+)', fline)
 
         if matched:
             host = matched.group(1)
@@ -409,10 +409,10 @@ def parse_dns_file(dns_file, error_list):
         fline = fline.strip()
 
         # shouldn't be any comments or blank links in a dumped dns file, but just in case
-        if re.match('^$', fline):
+        if re.match(r'^$', fline):
             #print 'skipped a blank line'
             continue
-        elif re.match('^\s*#', fline):
+        elif re.match(r'^\s*#', fline):
             #print 'skipped a comment line'
             continue
 
@@ -422,7 +422,7 @@ def parse_dns_file(dns_file, error_list):
         # machine1.foo.com.                        1800 IN A         10.20.112.113
         # 113.112.20.10.in-addr.arpa.              1800 IN PTR       machine1.foo.com.
         # FIXME: do we care about RRs with multiple values, e.g. round-robin A records?
-        matched = re.match('^(\S+)\s+\d+\s+IN\s+(\S+)\s+(.*)', fline)
+        matched = re.match(r'^(\S+)\s+\d+\s+IN\s+(\S+)\s+(.*)', fline)
 
         if matched:
             dns_name = matched.group(1)
@@ -456,10 +456,10 @@ def parse_arp_file(arp_file, error_list):
 
     for fline in arp_file:
         fline = fline.strip()
-        if re.match('^$', fline):
+        if re.match(r'^$', fline):
             #print 'skipped a blank line'
             continue
-        elif re.match('^\s*#', fline):
+        elif re.match(r'^\s*#', fline):
             #print 'skipped a comment line'
             continue
 
