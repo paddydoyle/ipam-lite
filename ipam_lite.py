@@ -31,16 +31,11 @@ def main(args):
     error_list = []
 
     # read the dns entries, unless we're told to resolve on the fly
-    dns_entries = []
-    if not args.resolve:
-        dns_entries = parse_dns_file(args.dns_file, error_list)
-
-    # TODO: parse or resolve the DNS before calling the unassigned report
+    dns_entries = construct_dns_entries(args, error_list)
 
     # short report: just the ranges of unassigned addresses
     if args.unassigned:
-        # TODO: pass dns_entries here
-        unassigned_addresses_report()
+        unassigned_addresses_report(dns_entries)
         return None
 
     # read the arp entries
@@ -57,6 +52,24 @@ def main(args):
         error_report(error_list)
 
 
+def construct_dns_entries(args, error_list):
+    """Construct dict of dns entries, either by live resolving, or
+    by parsing dumped BIND-style DNS files.
+    """
+
+    if args.resolve:
+        net = IPNetwork('%s/%s' % (args.netaddress, args.netmask))
+
+        # Generate the dict of resolved DNS entries, via live lookup
+        return resolve_dns_entries_via_lookup(net, error_list)
+    else:
+        raw_dns_entries = parse_dns_file(args.dns_file, error_list)
+
+        # Parse the DNS records from the flat raw_dns_entries list into
+        # the dict of DNS entries
+        return parse_dns_entries(raw_dns_entries, error_list)
+
+
 def unassigned_addresses_report(dns_entries):
     'loop over all of the addresses in the range, printing a report of unassigned IP addresses'
     # TODO: split into two functions: work and report
@@ -69,16 +82,10 @@ def unassigned_addresses_report(dns_entries):
     prev_ip_in_list = ''
 
     for ip in net.iter_hosts():
-        ip_str = str(ip)
-
-        # try to resolve the IP address
-        try:
-            res = socket.gethostbyaddr(ip_str)
-
+        if str(ip) in dns_entries:
             # it resolved ok, so clear this var
             prev_ip_in_list = ''
-
-        except socket.error:
+        else:
             count_unassigned += 1
 
             if not unassigned_list_of_lists or not prev_ip_in_list:
@@ -94,11 +101,13 @@ def unassigned_addresses_report(dns_entries):
     print 'Unassigned address blocks:\n'
     print 'Count: Range'
 
-    for list_ in unassigned_list_of_lists:
-        if len(list_) == 1:
-            print '%5d: %-16s' % (1, list_[0])
+    for unassigned_list in unassigned_list_of_lists:
+        if len(unassigned_list) == 1:
+            print '%5d: %-16s' % (1, unassigned_list[0])
         else:
-            print '%5d: %-16s => %-16s' % (len(list_), list_[0], list_[-1])
+            print '%5d: %-16s => %-16s' % (len(unassigned_list),
+                                           unassigned_list[0],
+                                           unassigned_list[-1])
 
     print "\nTotal unassigned: %d / %d" % (count_unassigned, (len(net) - 2))
 
@@ -106,8 +115,7 @@ def unassigned_addresses_report(dns_entries):
 def resolve_dns_entries_via_lookup(net, error_list):
     'loop over all of the addresses in the range, generating forward and reverse hashes'
 
-    reverse_lookups = {}
-    forward_lookups = {}
+    dns_entries = {}
 
     for ip in net.iter_hosts():
         ip = str(ip)
@@ -119,25 +127,16 @@ def resolve_dns_entries_via_lookup(net, error_list):
         if not host:
             continue
 
-        reverse_lookups[ip] = host
-
         # Now try to resolve the hostname
         resolved_ip = dns_forward_lookup(host)
 
-        if not resolved_ip:
+        if resolved_ip:
+            dns_entries[ip] = (host, resolved_ip)
+        else:
+            dns_entries[ip] = (host, '-')
             record_error(error_list, "DNS: unable to forward look up " + host)
-            continue
 
-        forward_lookups[host] = ip
-
-    # return a dict of the three things we want to return:
-    #   reverse_lookups: hash
-    #   forward_lookups: hash
-    # TODO: change this to a tuple; we consume them immediately
-    return {
-        'reverse_lookups': reverse_lookups,
-        'forward_lookups': forward_lookups,
-        }
+    return dns_entries
 
 
 def dns_reverse_lookup(ip):
@@ -162,13 +161,16 @@ def dns_forward_lookup(host):
         pass
 
 
-def parse_dns_entries(dns_entries, error_list):
+def parse_dns_entries(raw_dns_entries, error_list):
     'parse the dns entries from the list, generating forward and reverse hashes'
 
     reverse_lookups = {}
     forward_lookups = {}
+    dns_entries = {}
 
-    for line in dns_entries:
+    # First pass at the data: extract A and PTR records. The input
+    # ordering is not known.
+    for line in raw_dns_entries:
 
         # each line will be either:
         # machine1.foo.com.                        1800 IN A         10.20.112.113
@@ -194,6 +196,7 @@ def parse_dns_entries(dns_entries, error_list):
                 # 113.112.20.10.in-addr.arpa.              1800 IN PTR       machine1.foo.com.
 
                 # reverse the octets to retrieve the IP address
+                # FIXME: can we do better with slice in reverse?
                 octets = dns_name.split('.')[0:4]
                 octets.reverse()
                 ip = '.'.join(octets)
@@ -208,14 +211,17 @@ def parse_dns_entries(dns_entries, error_list):
         else:
             record_error(error_list, "DNS: to parse DNS entry: " + line)
 
-    # return a dict of the three things we want to return:
-    #   reverse_lookups: hash
-    #   forward_lookups: hash
-    # TODO: change this to a tuple; we consume them immediately
-    return {
-        'reverse_lookups': reverse_lookups,
-        'forward_lookups': forward_lookups,
-        }
+    # Second pass at the data. Not great, but the order of the entries
+    # is not known during the first pass.
+    # This pass, for each of the found IP addresses, check if the forward
+    # lookup of its host is there.
+    for ip, host in reverse_lookups.items():
+        if host in forward_lookups:
+            dns_entries[ip] = (host, forward_lookups[host])
+        else:
+            dns_entries[ip] = (host, '-')
+
+    return dns_entries
 
 
 def main_report(args, arp_entries, dhcp_entries, dns_entries, error_list):
@@ -227,23 +233,8 @@ def main_report(args, arp_entries, dhcp_entries, dns_entries, error_list):
 
     net = IPNetwork('%s/%s' % (args.netaddress, args.netmask))
 
-    reverse_lookups = {}
-    forward_lookups = {}
-
     count_no_arp = 0
     count_old_arp = 0
-
-    if args.resolve:
-        # generate the hashes of resolved DNS entries, via live lookup
-        resolved_entries_dict = resolve_dns_entries_via_lookup(net, error_list)
-    else:
-        # parse the DNS records from the flat dns_entries list into the hashes
-        resolved_entries_dict = parse_dns_entries(dns_entries, error_list)
-
-    reverse_lookups = resolved_entries_dict['reverse_lookups']
-    # FIXME: do we need forward_lookups at all? put tuples into reverse_lookups instead?
-    forward_lookups = resolved_entries_dict['forward_lookups']
-
 
     # print the top header
     print "IPAM-Lite Report for %s\n" % net
@@ -266,16 +257,10 @@ def main_report(args, arp_entries, dhcp_entries, dns_entries, error_list):
         ip = str(ip)
 
         # did we have a hostname?
-        if ip in reverse_lookups:
-            host = reverse_lookups[ip]
+        if ip in dns_entries:
+            (host, resolved_ip) = dns_entries[ip]
         else:
-            host = '-'
-            resolved_ip = '-'
-
-        if host in forward_lookups:
-            resolved_ip = forward_lookups[host]
-        else:
-            resolved_ip = '-'
+            (host, resolved_ip) = ('-', '-')
 
         # does the hostname resolve back to the same IP?
         if ip == resolved_ip:
@@ -305,6 +290,7 @@ def main_report(args, arp_entries, dhcp_entries, dns_entries, error_list):
 
         # do we have an entry in arp?
         if ip in arp_entries:
+            # FIXME: change arp_entries[ip] values to a tuple
             mac_arp = arp_entries[ip]['mac']
             host_arp = arp_entries[ip]['host']
             ts_arp = arp_entries[ip]['ts']
@@ -345,7 +331,7 @@ def main_report(args, arp_entries, dhcp_entries, dns_entries, error_list):
 
     print ""
     print "Total addresses in the range:          %4d" % (len(net) - 2)
-    print "Total addresses with hostnames:        %4d" % (len(reverse_lookups))
+    print "Total addresses with hostnames:        %4d" % (len(dns_entries))
     print "Total without ARP entries:             %4d" % (count_no_arp)
     if args.no_arp_days:
         print "Total ARP entries older than %d days: %4d" % (args.no_arp_days, count_old_arp)
@@ -411,7 +397,7 @@ def parse_dhcp_file(dhcp_file, domain, dhcp_hostnames, error_list):
 def parse_dns_file(dns_file, error_list):
     'Parse the exported dns file'
 
-    dns_entries = []
+    raw_dns_entries = []
 
     try:
         dns_file = open(dns_file, 'r')
@@ -450,11 +436,11 @@ def parse_dns_file(dns_file, error_list):
             # processing later.
 
             if dns_type == 'A' or dns_type == 'PTR':
-                dns_entries.append(fline)
+                raw_dns_entries.append(fline)
 
     dns_file.close()
 
-    return dns_entries
+    return raw_dns_entries
 
 
 # Parse the arp.dat file
@@ -494,6 +480,7 @@ def parse_arp_file(arp_file, error_list):
 
         # check for duplicate entries for the IP address; only store the most recent
         if not ip in arp_entries or int(arp_entries[ip]['ts']) < int(ts):
+            # FIXME: change arp_entries[ip] values to a tuple
             arp_entries[ip] = {
                 'mac': mac,
                 'ts': ts,
