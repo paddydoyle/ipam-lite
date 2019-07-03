@@ -27,3 +27,8 @@ def test_canonicalise_mac_wrong_format():
 def test_canonicalise_mac_wrong_length():
     mac = "ZZ:AD:TT:EF:00"
     assert(canonicalise_mac(mac) == "")
+
+
+# TODO: test dhcp parsing
+# TODO: test dns parsing
+# TODO: test arp parsing
