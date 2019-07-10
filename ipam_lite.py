@@ -233,7 +233,7 @@ def main_report(args, arp_entries, dhcp_entries, dns_entries, error_list):
 
     net = IPNetwork('%s/%s' % (args.netaddress, args.netmask))
 
-    count_no_arp = 0
+    count_arp_entries = 0
     count_old_arp = 0
 
     # print the top header
@@ -310,7 +310,7 @@ def main_report(args, arp_entries, dhcp_entries, dns_entries, error_list):
             date_arp = datetime.fromtimestamp(int(ts_arp))
             ts_arp = date_arp.strftime('%Y-%m-%d')
 
-            count_no_arp += 1
+            count_arp_entries += 1
 
             delta = date_now - date_arp
             # TODO: configurable parameter of how many days?
@@ -332,7 +332,7 @@ def main_report(args, arp_entries, dhcp_entries, dns_entries, error_list):
     print ""
     print "Total addresses in the range:          %4d" % (len(net) - 2)
     print "Total addresses with hostnames:        %4d" % (len(dns_entries))
-    print "Total without ARP entries:             %4d" % (count_no_arp)
+    print "Total with no ARP entries:             %4d" % (len(net) - 2 - count_arp_entries)
     if args.no_arp_days:
         print "Total ARP entries older than %d days: %4d" % (args.no_arp_days, count_old_arp)
 
