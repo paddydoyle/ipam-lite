@@ -35,7 +35,7 @@ def main(args):
 
     # short report: just the ranges of unassigned addresses
     if args.unassigned:
-        unassigned_addresses_report(dns_entries)
+        unassigned_addresses_report(args, dns_entries)
         return None
 
     # read the arp entries
@@ -70,7 +70,7 @@ def construct_dns_entries(args, error_list):
         return parse_dns_entries(raw_dns_entries, error_list)
 
 
-def unassigned_addresses_report(dns_entries):
+def unassigned_addresses_report(args, dns_entries):
     'loop over all of the addresses in the range, printing a report of unassigned IP addresses'
     # TODO: split into two functions: work and report
 
