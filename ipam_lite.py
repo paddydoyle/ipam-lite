@@ -71,43 +71,45 @@ def construct_dns_entries(args, error_list):
 
 
 def unassigned_addresses_report(args, dns_entries):
-    'loop over all of the addresses in the range, printing a report of unassigned IP addresses'
+    """Loop over all of the addresses in the range, printing a report of
+    unassigned IP addresses in contiguous blocks."""
     # TODO: split into two functions: work and report
 
     net = IPNetwork('%s/%s' % (args.netaddress, args.netmask))
 
-    unassigned_list_of_lists = []
+    unassigned_blocks = []
 
     count_unassigned = 0
-    prev_ip_in_list = ''
+    prev_ip_in_block = ''
 
     for ip in net.iter_hosts():
         if str(ip) in dns_entries:
-            # it resolved ok, so clear this var
-            prev_ip_in_list = ''
+            # It resolved ok, so clear this var
+            prev_ip_in_block = ''
         else:
             count_unassigned += 1
 
-            if not unassigned_list_of_lists or not prev_ip_in_list:
-                # the very first unassigned address, or no prev_ip_in_list
-                unassigned_list_of_lists.append([ip])
-            elif prev_ip_in_list and (int(prev_ip_in_list)+1) == int(ip):
-                # we're one address further on from previous one found, so append to the subnet
-                unassigned_list_of_lists[-1].append(ip)
+            if not unassigned_blocks or not prev_ip_in_block:
+                # The very first unassigned address, or no prev_ip_in_block
+                unassigned_blocks.append([ip])
+            elif prev_ip_in_block and (int(prev_ip_in_block)+1) == int(ip):
+                # We're one address further on from previous one found, so
+                # append to the block
+                unassigned_blocks[-1].append(ip)
 
-            # move on the saved var
-            prev_ip_in_list = ip
+            # Move on the saved var
+            prev_ip_in_block = ip
 
     print 'Unassigned address blocks:\n'
     print 'Count: Range'
 
-    for unassigned_list in unassigned_list_of_lists:
-        if len(unassigned_list) == 1:
-            print '%5d: %-16s' % (1, unassigned_list[0])
+    for unassigned_block in unassigned_blocks:
+        if len(unassigned_block) == 1:
+            print '%5d: %-16s' % (1, unassigned_block[0])
         else:
-            print '%5d: %-16s => %-16s' % (len(unassigned_list),
-                                           unassigned_list[0],
-                                           unassigned_list[-1])
+            print '%5d: %-16s => %-16s' % (len(unassigned_block),
+                                           unassigned_block[0],
+                                           unassigned_block[-1])
 
     print "\nTotal unassigned: %d / %d" % (count_unassigned, (len(net) - 2))
 
