@@ -73,7 +73,28 @@ def construct_dns_entries(args, error_list):
 def unassigned_addresses_report(args, dns_entries):
     """Loop over all of the addresses in the range, printing a report of
     unassigned IP addresses in contiguous blocks."""
-    # TODO: split into two functions: work and report
+
+    (count_unassigned,
+     count_addresses,
+     unassigned_blocks) = unassigned_addresses_generate(args, dns_entries)
+
+    print 'Unassigned address blocks:\n'
+    print 'Count: Range'
+
+    for unassigned_block in unassigned_blocks:
+        if len(unassigned_block) == 1:
+            print '%5d: %-16s' % (1, unassigned_block[0])
+        else:
+            print '%5d: %-16s => %-16s' % (len(unassigned_block),
+                                           unassigned_block[0],
+                                           unassigned_block[-1])
+
+    print "\nTotal unassigned: %d / %d" % (count_unassigned, count_addresses)
+
+
+def unassigned_addresses_generate(args, dns_entries):
+    """Loop over all of the addresses in the range, generating a list of
+    unassigned IP addresses in contiguous blocks."""
 
     net = IPNetwork('%s/%s' % (args.netaddress, args.netmask))
 
@@ -100,18 +121,9 @@ def unassigned_addresses_report(args, dns_entries):
             # Move on the saved var
             prev_ip_in_block = ip
 
-    print 'Unassigned address blocks:\n'
-    print 'Count: Range'
+    count_addresses = len(net) - 2
 
-    for unassigned_block in unassigned_blocks:
-        if len(unassigned_block) == 1:
-            print '%5d: %-16s' % (1, unassigned_block[0])
-        else:
-            print '%5d: %-16s => %-16s' % (len(unassigned_block),
-                                           unassigned_block[0],
-                                           unassigned_block[-1])
-
-    print "\nTotal unassigned: %d / %d" % (count_unassigned, (len(net) - 2))
+    return (count_unassigned, count_addresses, unassigned_blocks)
 
 
 def resolve_dns_entries_via_lookup(net, error_list):
