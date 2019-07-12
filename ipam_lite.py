@@ -305,14 +305,9 @@ def main_report(args, arp_entries, dhcp_entries, dns_entries, error_list):
 
         # do we have an entry in arp?
         if ip in arp_entries:
-            # FIXME: change arp_entries[ip] values to a tuple
-            mac_arp = arp_entries[ip]['mac']
-            # host_arp = arp_entries[ip]['host']
-            ts_arp = arp_entries[ip]['ts']
+            (mac_arp, ts_arp) = arp_entries[ip]
         else:
-            mac_arp = '-'
-            # host_arp = '-'
-            ts_arp = '-'
+            (mac_arp, ts_arp) = ("-", "-")
 
         # matching MAC addresses?
         if mac_dhcp != '-' and mac_dhcp == mac_arp:
@@ -482,16 +477,10 @@ def parse_arp_file(arp_file, error_list):
 
         ip = entry_list[1]
         ts = entry_list[2]
-        host = entry_list[3] if len(entry_list) > 3 else ''
 
         # check for duplicate entries for the IP address; only store the most recent
-        if not ip in arp_entries or int(arp_entries[ip]['ts']) < int(ts):
-            # FIXME: change arp_entries[ip] values to a tuple
-            arp_entries[ip] = {
-                'mac': mac,
-                'ts': ts,
-                'host': host,
-            }
+        if not ip in arp_entries or int(arp_entries[ip][1]) < int(ts):
+            arp_entries[ip] = (mac, ts)
 
     arp_file.close()
 

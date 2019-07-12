@@ -122,30 +122,21 @@ def test_parse_arp_file():
     ip1 = "10.10.15.1"
     mac1 = "50:00:00:00:33:09"
     ts1 = "1561047705"
-    host1 = "host001"
 
     ip8 = "10.10.15.8"
     mac8 = "ERR0"
     ts8 = "1457277442"
-    host8 = "host008"
 
     ip10 = "10.10.15.10"
     mac10 = "50:00:00:0f:22:04"
     ts10 = "1457278560"
-    host10 = "host010"
 
     #### When ####
     arp_entries = parse_arp_file(arp_file, error_list)
 
     #### Then ####
-    assert(arp_entries[ip1]["mac"] == mac1)
-    assert(arp_entries[ip1]["ts"] == ts1)
-    assert(arp_entries[ip1]["host"] == host1)
+    assert(arp_entries[ip1] == (mac1, ts1))
 
-    assert(arp_entries[ip8]["mac"] == mac8)
-    assert(arp_entries[ip8]["ts"] == ts8)
-    assert(arp_entries[ip8]["host"] == host8)
+    assert(arp_entries[ip8] == (mac8, ts8))
 
-    assert(arp_entries[ip10]["mac"] == mac10)
-    assert(arp_entries[ip10]["ts"] == ts10)
-    assert(arp_entries[ip10]["host"] == host10)
+    assert(arp_entries[ip10] == (mac10, ts10))
