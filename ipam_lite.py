@@ -367,10 +367,8 @@ def parse_dhcp_file(dhcp_file, domain, dhcp_hostnames, error_list):
     for fline in dhcp_file:
         fline = fline.strip()
         if re.match(r'^$', fline):
-            #print 'skipped a blank line'
             continue
         elif re.match(r'^\s*#', fline):
-            #print 'skipped a comment line'
             continue
 
         # try match the main regex
@@ -397,7 +395,6 @@ def parse_dhcp_file(dhcp_file, domain, dhcp_hostnames, error_list):
                     _ = socket.gethostbyname('%s.%s' % (host, domain))
 
                 except socket.error:
-                    #print "unable to forward look up " + host
                     record_error(error_list, "DHCP: unable to resolve " + host)
 
 
@@ -425,10 +422,8 @@ def parse_dns_file(dns_file):
 
         # shouldn't be any comments or blank links in a dumped dns file, but just in case
         if re.match(r'^$', fline):
-            #print 'skipped a blank line'
             continue
         elif re.match(r'^\s*#', fline):
-            #print 'skipped a comment line'
             continue
 
         # parse either a forward A record, or reverse PTR record
@@ -470,10 +465,8 @@ def parse_arp_file(arp_file, error_list):
     for fline in arp_file:
         fline = fline.strip()
         if re.match(r'^$', fline):
-            #print 'skipped a blank line'
             continue
         elif re.match(r'^\s*#', fline):
-            #print 'skipped a comment line'
             continue
 
         #addr_list.append(fline.split(','))
