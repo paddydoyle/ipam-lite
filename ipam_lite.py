@@ -385,7 +385,7 @@ def parse_dhcp_file(dhcp_file, domain, dhcp_hostnames, error_list):
                                    % (matched.group(2), host))
 
             # store the short hostname only
-            if host != '-' and host.endswith(domain):
+            if host and host.endswith(domain):
                 short_host = host[:-len(domain)]
                 host = short_host
 
