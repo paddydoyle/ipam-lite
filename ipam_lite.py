@@ -192,38 +192,39 @@ def parse_dns_entries(raw_dns_entries, error_list):
 
         matched = re.match(r'^(\S+)\s+\d+\s+IN\s+(\S+)\s+(.*)', line)
 
-        if matched:
-            dns_name = matched.group(1)
-            dns_type = matched.group(2)
-            dns_rdata = matched.group(3)
-
-            if dns_type == 'A':
-                # machine1.foo.com.                        1800 IN A         10.20.112.113
-
-                # strip the trailing '.'
-                if dns_name.endswith('.'):
-                    dns_name = dns_name[:-1]
-
-                forward_lookups[dns_name] = dns_rdata
-
-            elif dns_type == 'PTR':
-                # 113.112.20.10.in-addr.arpa.              1800 IN PTR       machine1.foo.com.
-
-                # reverse the octets to retrieve the IP address
-                # FIXME: can we do better with slice in reverse?
-                octets = dns_name.split('.')[0:4]
-                octets.reverse()
-                ip = '.'.join(octets)
-
-                # strip the trailing '.'
-                if dns_rdata.endswith('.'):
-                    dns_rdata = dns_rdata[:-1]
-
-                reverse_lookups[ip] = dns_rdata
-            else:
-                record_error(error_list, "DNS: unexpected RR type: " + dns_type)
-        else:
+        if not matched:
             record_error(error_list, "DNS: to parse DNS entry: " + line)
+            continue
+
+        dns_name = matched.group(1)
+        dns_type = matched.group(2)
+        dns_rdata = matched.group(3)
+
+        if dns_type == 'A':
+            # machine1.foo.com.                        1800 IN A         10.20.112.113
+
+            # strip the trailing '.'
+            if dns_name.endswith('.'):
+                dns_name = dns_name[:-1]
+
+            forward_lookups[dns_name] = dns_rdata
+
+        elif dns_type == 'PTR':
+            # 113.112.20.10.in-addr.arpa.              1800 IN PTR       machine1.foo.com.
+
+            # reverse the octets to retrieve the IP address
+            # FIXME: can we do better with slice in reverse?
+            octets = dns_name.split('.')[0:4]
+            octets.reverse()
+            ip = '.'.join(octets)
+
+            # strip the trailing '.'
+            if dns_rdata.endswith('.'):
+                dns_rdata = dns_rdata[:-1]
+
+            reverse_lookups[ip] = dns_rdata
+        else:
+            record_error(error_list, "DNS: unexpected RR type: " + dns_type)
 
     # Second pass at the data. Not great, but the order of the entries
     # is not known during the first pass.
