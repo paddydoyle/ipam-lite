@@ -1,4 +1,5 @@
 from ipam_lite import canonicalise_mac
+from ipam_lite import parse_dhcp_file
 from ipam_lite import parse_dns_entries
 
 ###################################################
@@ -51,26 +52,61 @@ def test_parse_dns_entries():
     error_list = []
     expected_values = {}
 
-    #### When ####
-    dns_entries = parse_dns_entries(dns_text, error_list)
-
-    #### Then ####
     ip1 = "10.20.112.113"
     host1 = "machine1.foo.com"
     expected_values[ip1] = (host1, ip1)
-
-    assert(dns_entries[ip1] == expected_values[ip1])
 
     ip2 = "10.20.112.114"
     host2 = "machine2.foo.com"
     expected_values[ip2] = (host2, "-")
 
+    #### When ####
+    dns_entries = parse_dns_entries(dns_text, error_list)
+
+    #### Then ####
+    assert(dns_entries[ip1] == expected_values[ip1])
     assert(dns_entries[ip2] == expected_values[ip2])
 
     assert(error_list[0] == "DNS: unexpected RR type: PTRRRR")
-
     assert(error_list[1] == "DNS: to parse DNS entry: bob")
 
+
+###################################################
+# DHCP parsing tests
+###################################################
+
+def test_parse_dhcp_file():
+    #### Given ####
+    dhcp_file = "sample_data/dhcpd.conf"
+    domain = "foo.com"
+    dhcp_hostnames = False
+    error_list = []
+
+    host1 = "host001"
+    mac1 = "50:00:00:00:33:09"
+
+    host8 = "host008"
+    mac8 = "50:00:00:0e:22:dde"
+
+    host9 = "host009"
+    mac9 = "50:00:00:0e:51:"
+
+    host10 = "host010.foobar.com"
+    mac10 = "50:00:00:0f:22:04"
+
+    #### When ####
+    dhcp_entries = parse_dhcp_file(dhcp_file, domain, dhcp_hostnames, error_list)
+
+    #### Then ####
+    assert(dhcp_entries[host1] == mac1)
+    assert(dhcp_entries[host8] == "ERR0")
+    assert(dhcp_entries[host9] == "ERR1")
+    assert(dhcp_entries[host10] == mac10)
+
+    assert(error_list[0] ==
+           "DHCP: unable to parse '%s' as a MAC address for %s" % (mac8, host8))
+    assert(error_list[1] ==
+           "DHCP: unable to parse '%s' as a MAC address for %s" % (mac9, host9))
 
 # TODO: test dhcp parsing
 # TODO: test arp parsing
