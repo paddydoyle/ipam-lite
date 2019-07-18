@@ -1,0 +1,10 @@
+# Seems to need this to exclude all of the system packages; maybe
+# our version of coverage is old.
+[run]
+omit =
+    # omit anything in a .local directory anywhere
+    */.local/*
+    # omit everything in /usr
+    /usr/*
+    # omit this single file
+    #utils/tirefire.py
