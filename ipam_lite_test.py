@@ -111,7 +111,7 @@ def test_parse_dhcp_file():
 
 
 ###################################################
-# DHCP parsing tests
+# ARP parsing tests
 ###################################################
 
 def test_parse_arp_file():
