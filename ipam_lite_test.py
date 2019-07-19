@@ -2,6 +2,7 @@ from ipam_lite import canonicalise_mac
 from ipam_lite import parse_arp_file
 from ipam_lite import parse_dhcp_file
 from ipam_lite import parse_dns_entries
+from ipam_lite import parse_dns_file
 
 ###################################################
 # MAC parsing tests
@@ -70,6 +71,20 @@ def test_parse_dns_entries():
 
     assert(error_list[0] == "DNS: unexpected RR type: PTRRRR")
     assert(error_list[1] == "DNS: to parse DNS entry: bob")
+
+def test_parse_dns_file():
+    #### Given ####
+    dns_file = "test_data/dns.txt"
+
+    host_a1 = "host001.foo.com.    1800 IN A    10.10.15.1"
+    host_ptr1 = "1.15.10.10.in-addr.arpa.    1800 IN PTR    host001.foo.com."
+
+    #### When ####
+    raw_dns_entries = parse_dns_file(dns_file)
+
+    #### Then ####
+    assert(host_a1 in raw_dns_entries)
+    assert(host_ptr1 in raw_dns_entries)
 
 
 ###################################################
