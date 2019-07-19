@@ -78,7 +78,7 @@ def test_parse_dns_entries():
 
 def test_parse_dhcp_file():
     #### Given ####
-    dhcp_file = "sample_data/dhcpd.conf"
+    dhcp_file = "test_data/dhcpd.txt"
     domain = "foo.com"
     dhcp_hostnames = False
     error_list = []
@@ -116,7 +116,7 @@ def test_parse_dhcp_file():
 
 def test_parse_arp_file():
     #### Given ####
-    arp_file = "sample_data/arp.dat"
+    arp_file = "test_data/arp.txt"
     error_list = []
 
     ip1 = "10.10.15.1"

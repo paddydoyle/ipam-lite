@@ -1,0 +1,22 @@
+
+subnet 10.10.15.0 netmask 255.255.255.0 {
+	
+	host host001 { hardware ethernet 50:00:00:00:33:09;
+			fixed-address host001.foo.com; }
+	host host002 { hardware ethernet 50:00:00:08:3a:b8;
+			fixed-address host002.foo.com; }
+	host host003 { hardware ethernet 50:00:00:0a:22:f8;
+			fixed-address host003.foo.com; }
+	host host006 { hardware ethernet 50:00:00:0e:11:e9;
+			fixed-address host006.foo.com; }
+	host host007 { hardware ethernet 50:00:00:0e:22:95;
+			fixed-address host007.foo.com; }
+	host host008 { hardware ethernet 50:00:00:0e:22:dde;
+			fixed-address host008.foo.com; }
+	host host009 { hardware ethernet 50:00:00:0e:51:xx;
+			fixed-address host009.foo.com; }
+	host host010.foobar.com { hardware ethernet 50:00:00:0f:22:04;
+			fixed-address host010.foobar.com; }
+
+}
+
