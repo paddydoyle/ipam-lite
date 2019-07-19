@@ -98,15 +98,19 @@ def test_parse_dhcp_file():
     dhcp_hostnames = False
     error_list = []
 
+    # Good MAC
     host1 = "host001"
     mac1 = "50:00:00:00:33:09"
 
+    # Bad MAC: too long
     host8 = "host008"
     mac8 = "50:00:00:0e:22:dde"
 
+    # Bad MAC: too short
     host9 = "host009"
     mac9 = "50:00:00:0e:51:"
 
+    # Good MAC
     host10 = "host010.foobar.com"
     mac10 = "50:00:00:0f:22:04"
 
