@@ -229,6 +229,28 @@ def parse_dns_entries(raw_dns_entries, error_list):
     return dns_entries
 
 
+def format_dns_entry(ip, dns_entries, error_list):
+    """Format the DNS parts of the main report. Return a
+    tuple of the host and its resolved IP."""
+
+    # Did we have a hostname?
+    if ip in dns_entries:
+        (host, resolved_ip) = dns_entries[ip]
+    else:
+        (host, resolved_ip) = ('-', '-')
+
+    # Does the hostname resolve back to the same IP?
+    if ip == resolved_ip:
+        resolved_ip = 'OK'
+    elif host == '-':
+        resolved_ip = '-'
+    else:
+        resolved_ip = record_error(error_list,
+                                   'DNS: forward and reverse lookup mismatch '
+                                   'for %s => %s => %s' % (ip, host, resolved_ip))
+
+    return (host, resolved_ip)
+
 def main_report(args, arp_entries, dhcp_entries, dns_entries, error_list):
     """Loop over all of the addresses in the range, printing a report."""
     # TODO: split into two functions: work and report
@@ -261,21 +283,7 @@ def main_report(args, arp_entries, dhcp_entries, dns_entries, error_list):
     for ip in net.iter_hosts():
         ip = str(ip)
 
-        # Did we have a hostname?
-        if ip in dns_entries:
-            (host, resolved_ip) = dns_entries[ip]
-        else:
-            (host, resolved_ip) = ('-', '-')
-
-        # Does the hostname resolve back to the same IP?
-        if ip == resolved_ip:
-            resolved_ip = 'OK'
-        elif host == '-':
-            resolved_ip = '-'
-        else:
-            resolved_ip = record_error(error_list,
-                                       'DNS: forward and reverse lookup mismatch '
-                                       'for %s => %s => %s' % (ip, host, resolved_ip))
+        (host, resolved_ip) = format_dns_entry(ip, dns_entries, error_list)
 
         # Do we have a hostname in the dhcp entries?
         if host != '-' and host.endswith(args.domain):
