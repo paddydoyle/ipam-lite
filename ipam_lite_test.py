@@ -3,6 +3,7 @@ from ipam_lite import parse_arp_file
 from ipam_lite import parse_dhcp_file
 from ipam_lite import parse_dns_entries
 from ipam_lite import parse_dns_file
+from ipam_lite import format_dns_entry
 
 ###################################################
 # MAC parsing tests
@@ -159,3 +160,50 @@ def test_parse_arp_file():
     assert(arp_entries[ip8] == (mac8, ts8))
 
     assert(arp_entries[ip10] == (mac10, ts10))
+
+
+###################################################
+# DNS formatting tests
+###################################################
+
+def test_format_dns_entry():
+    #### Given ####
+    domain = "foo.com"
+    error_list = []
+
+    # Good entry
+    ip1 = "10.10.15.1"
+    host1 = "host001.foo.com"
+    resolved_ip1 = ip1
+
+    # Forward and reverse mismatch.
+    ip2 = "10.10.15.10"
+    host2 = "host010.foobar.com"
+    resolved_ip2 = "10.10.10.10"
+
+    # Missing from dns_entries
+    ip3 = "10.10.15.20"
+    resolved_ip3 = "10.10.10.20"
+
+    dns_entries = {
+                   ip1: (host1, resolved_ip1),
+                   ip2: (host2, resolved_ip2),
+                  }
+
+    #### When ####
+    (processed_host1, resolved_ip1) = format_dns_entry(ip1, dns_entries, domain, error_list)
+    (processed_host2, resolved_ip2) = format_dns_entry(ip2, dns_entries, domain, error_list)
+    (processed_host3, resolved_ip3) = format_dns_entry(ip3, dns_entries, domain, error_list)
+
+
+    #### Then ####
+    assert(resolved_ip1 == "OK")
+    assert(resolved_ip2 == resolved_ip2)
+    assert(resolved_ip2 == "ERR0")
+    assert(resolved_ip3 == "-")
+    assert(processed_host1 == host1[:-(len(domain)+1)])
+    assert(processed_host2 == host2)
+    assert(processed_host3 == "-")
+
+    assert(error_list[0] ==
+           "DNS: forward and reverse lookup mismatch for %s => %s => %s" % (ip2, host2, "10.10.10.10"))
