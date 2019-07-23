@@ -49,21 +49,21 @@ def test_canonicalise_mac_wrong_length():
 def test_parse_dns_entries():
     #### Given ####
     dns_text = [
-                "machine1.foo.com.           1800 IN A   10.20.112.113",
-                "113.112.20.10.in-addr.arpa. 1800 IN PTR machine1.foo.com.",
-                "machine222.foo.com.           1800 IN A   10.20.112.114",
-                "114.112.20.10.in-addr.arpa. 1800 IN PTR machine2.foo.com.",
-                "115.112.20.10.in-addr.arpa. 1800 IN PTRRRR machine2.foo.com.",
+                "machine1.foo.com.           1800 IN A   10.10.15.1",
+                "1.15.10.10.in-addr.arpa. 1800 IN PTR machine1.foo.com.",
+                "machine222.foo.com.           1800 IN A   10.10.15.2",
+                "2.15.10.10.in-addr.arpa. 1800 IN PTR machine2.foo.com.",
+                "3.15.10.10.in-addr.arpa. 1800 IN PTRRRR machine2.foo.com.",
                 "bob",
                ]
     error_list = []
     expected_values = {}
 
-    ip1 = "10.20.112.113"
+    ip1 = "10.10.15.1"
     host1 = "machine1.foo.com"
     expected_values[ip1] = (host1, ip1)
 
-    ip2 = "10.20.112.114"
+    ip2 = "10.10.15.2"
     host2 = "machine2.foo.com"
     expected_values[ip2] = (host2, "-")
 
