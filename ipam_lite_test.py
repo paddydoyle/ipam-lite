@@ -8,6 +8,7 @@ from ipam_lite import parse_dns_file
 from ipam_lite import format_arp_entry
 from ipam_lite import format_dhcp_entry
 from ipam_lite import format_dns_entry
+from ipam_lite import unassigned_addresses_generate
 
 ###################################################
 # MAC parsing tests
@@ -294,3 +295,38 @@ def test_format_arp_entry():
 
     assert(expected_mac_arp3 == "-")
     assert(delta_arp3 == None)
+
+
+###################################################
+# Unassigned blocks formatting tests
+###################################################
+
+def test_unassigned_addresses_generate():
+    #### Given ####
+    class ArgsMock:
+        pass
+    args = ArgsMock()
+    args.netaddress = "10.10.15.0"
+    args.netmask = "28"
+
+    dns_entries = {
+                   "10.10.15.1": ("", ""),
+                   "10.10.15.2": ("", ""),
+                   "10.10.15.3": ("", ""),
+                   "10.10.15.6": ("", ""),
+                   "10.10.15.7": ("", ""),
+                   "10.10.15.8": ("", ""),
+                   "10.10.15.9": ("", ""),
+                   "10.10.15.10": ("", ""),
+                  }
+
+    #### When ####
+    (count_unassigned,
+     count_addresses,
+     unassigned_blocks) = unassigned_addresses_generate(args, dns_entries)
+
+    #### Then ####
+    assert(count_unassigned == 6)
+    assert(count_addresses == 14)
+
+    assert(len(unassigned_blocks) == 2)
