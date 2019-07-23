@@ -1,8 +1,11 @@
+from datetime import datetime
+
 from ipam_lite import canonicalise_mac
 from ipam_lite import parse_arp_file
 from ipam_lite import parse_dhcp_file
 from ipam_lite import parse_dns_entries
 from ipam_lite import parse_dns_file
+from ipam_lite import format_arp_entry
 from ipam_lite import format_dhcp_entry
 from ipam_lite import format_dns_entry
 
@@ -245,3 +248,49 @@ def test_format_dhcp_entry():
     assert(mac_dhcp1 == "[ SAME AS ARP ]")
     assert(mac_dhcp2 == "50:00:00:0e:22:95")
     assert(mac_dhcp3 == "-")
+
+
+###################################################
+# ARP formatting tests
+###################################################
+
+def test_format_arp_entry():
+    #### Given ####
+    # Good entry, same date.
+    ip1 = "10.10.15.1"
+    mac_arp1 = "50:00:00:00:33:09"
+    ts_arp1 = datetime.now().strftime('%s')
+    expected_ts_arp1 = datetime.now().strftime('%Y-%m-%d')
+
+    # Good entry, days old.
+    ip2 = "10.10.15.2"
+    mac_arp2 = "50:00:00:08:3a:b8"
+    ts_arp2 = 1561047705
+    expected_ts_arp2 = datetime.fromtimestamp(ts_arp2)
+    delta_arp2 = datetime.now() - expected_ts_arp2
+    expected_ts_arp2 = expected_ts_arp2.strftime('%Y-%m-%d')
+    expected_ts_arp2 += ' [%d days]' % delta_arp2.days
+
+    # Missing.
+    ip3 = "10.10.15.20"
+    expected_mac_arp3 = "-"
+
+    arp_entries = {
+                   ip1: (mac_arp1, ts_arp1),
+                   ip2: (mac_arp2, ts_arp2),
+                  }
+
+    #### When ####
+    (mac_arp1, ts_arp1, delta_arp1) = format_arp_entry(ip1, arp_entries)
+    (mac_arp2, ts_arp2, delta_arp2) = format_arp_entry(ip2, arp_entries)
+    (mac_arp3, ts_arp3, delta_arp3) = format_arp_entry(ip3, arp_entries)
+
+
+    #### Then ####
+    assert(mac_arp1 == "50:00:00:00:33:09")
+    assert(expected_ts_arp1 == ts_arp1)
+
+    assert(expected_ts_arp2 == ts_arp2)
+
+    assert(expected_mac_arp3 == "-")
+    assert(delta_arp3 == None)
