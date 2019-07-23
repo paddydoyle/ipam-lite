@@ -283,15 +283,23 @@ def format_arp_entry(ip, arp_entries):
     else:
         (mac_arp, ts_arp) = ("-", "-")
 
-    return (mac_arp, ts_arp)
+    delta_arp = None
+
+    if ts_arp != '-':
+        date_arp = datetime.fromtimestamp(int(ts_arp))
+        ts_arp = date_arp.strftime('%Y-%m-%d')
+
+        delta_arp = datetime.now() - date_arp
+        # TODO: configurable parameter of how many days?
+        if delta_arp.days > 1:
+            ts_arp += ' [%d days]' % delta_arp.days
+
+    return (mac_arp, ts_arp, delta_arp)
 
 
 def main_report(args, arp_entries, dhcp_entries, dns_entries, error_list):
     """Loop over all of the addresses in the range, printing a report."""
     # TODO: split into two functions: work and report
-
-    # Current timestamp
-    date_now = datetime.now()
 
     net = IPNetwork('%s/%s' % (args.netaddress, args.netmask))
 
@@ -320,31 +328,20 @@ def main_report(args, arp_entries, dhcp_entries, dns_entries, error_list):
 
         (host, resolved_ip) = format_dns_entry(ip, dns_entries, args.domain, error_list)
 
-        (mac_arp, ts_arp) = format_arp_entry(ip, arp_entries)
+        (mac_arp, ts_arp, delta_arp) = format_arp_entry(ip, arp_entries)
 
         mac_dhcp = format_dhcp_entry(host, dhcp_entries, mac_arp)
 
-        # Reset, because of conditional update below
-        delta = None
+        if delta_arp and delta_arp.days > args.no_arp_days:
+            count_old_arp += 1
 
         if ts_arp != '-':
-            date_arp = datetime.fromtimestamp(int(ts_arp))
-            ts_arp = date_arp.strftime('%Y-%m-%d')
-
             count_arp_entries += 1
-
-            delta = date_now - date_arp
-            # TODO: configurable parameter of how many days?
-            if delta.days > 1:
-                ts_arp += ' [%d days]' % delta.days
-
-                if delta.days > args.no_arp_days:
-                    count_old_arp += 1
 
         # Any restrictions on the printing? Limit to ones with no arp entries?
         if args.no_arp and ts_arp == '-':
             print format_str.format(ip, host, resolved_ip, mac_dhcp, mac_arp, ts_arp)
-        elif args.no_arp_days and delta and delta.days > args.no_arp_days:
+        elif args.no_arp_days and delta_arp and delta_arp.days > args.no_arp_days:
             print format_str.format(ip, host, resolved_ip, mac_dhcp, mac_arp, ts_arp)
         elif not args.no_arp and not args.no_arp_days:
             # No restrictions, print everything.
