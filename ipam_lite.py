@@ -1,5 +1,18 @@
 #!/usr/bin/env python
 
+"""
+ipam_lite: IPAM Reporting Tool.
+
+This is a very simple IPAM (IP Address Management) reporting tool, which looks
+at DNS, DHCP and Arpwatch data. It produces a report of IP -> DHCP mappings,
+and includes info from arpwatch on when the MAC was last seen.
+
+Some basic mismatch and parsing errors are reported.
+
+It is mainly a reporting tool for when DNS and DHCP information has diverged
+over time, and for giving an overall IP/DNS report for a given subnet.
+"""
+
 import argparse
 import re
 import socket
@@ -8,16 +21,6 @@ from netaddr import EUI
 from netaddr import core
 from netaddr import IPNetwork
 from netaddr import mac_unix
-
-##############################################################################
-# ipam_lite
-# 2016-08-22 paddy@tchpc.tcd.ie
-# For a given (IPv4) subnet, resolve the IP addresses and hostnames, looking
-# for simple errors. Additionally, parse dhcpd.conf and arp.dat looking for
-# other simple issues.
-# Print out a nice report of the IP usage in the subnet, including 'last seen'
-# dates from arpwatch.
-##############################################################################
 
 
 def main(args):
