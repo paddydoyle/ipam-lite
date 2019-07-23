@@ -330,3 +330,5 @@ def test_unassigned_addresses_generate():
     assert(count_addresses == 14)
 
     assert(len(unassigned_blocks) == 2)
+    assert(len(unassigned_blocks[0]) == 2)
+    assert(len(unassigned_blocks[1]) == 4)
