@@ -309,7 +309,7 @@ def main_report(args, arp_entries, dhcp_entries, dns_entries, error_list):
     print "IPAM-Lite Report for %s\n" % net
 
     if args.no_arp:
-        print("Filtering the report to show IP address with no ARP entries\n")
+        print "Filtering the report to show IP address with no ARP entries\n"
     if args.no_arp_days:
         print("Filtering the report to show IP address with no ARP entries in "
               "the past %d days\n" % (args.no_arp_days))
