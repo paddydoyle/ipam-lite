@@ -232,7 +232,6 @@ def parse_dns_entries(raw_dns_entries, error_list):
 def format_dns_entry(ip, dns_entries, error_list):
     """Format the DNS parts of the main report. Return a
     tuple of the host and its resolved IP."""
-
     # Did we have a hostname?
     if ip in dns_entries:
         (host, resolved_ip) = dns_entries[ip]
@@ -250,6 +249,45 @@ def format_dns_entry(ip, dns_entries, error_list):
                                    'for %s => %s => %s' % (ip, host, resolved_ip))
 
     return (host, resolved_ip)
+
+
+def format_dhcp_entry(host, domain, dhcp_entries, mac_arp):
+    """Format the DHCP part of the main report. Return the MAC
+    address of the host, if any."""
+    # Do we have a hostname in the dhcp entries?
+    if host != '-' and host.endswith(args.domain):
+        # Change to short hostname.
+        # Add 1 to also remove the '.' between host and domain
+        short_host = host[:-(len(args.domain)+1)]
+        # Only print the short hostname if it's in the domain
+        host = short_host
+
+        if short_host in dhcp_entries:
+            mac_dhcp = dhcp_entries[short_host]
+        else:
+            mac_dhcp = '-'
+
+    else:
+        mac_dhcp = '-'
+
+    # Matching MAC addresses?
+    if mac_dhcp != '-' and mac_dhcp == mac_arp:
+        mac_dhcp = "[ SAME AS ARP ]"
+
+    return mac_dhcp
+
+
+def format_arp_entry(ip, arp_entries):
+    """Format the ARP part of the main report. Return a tuple
+    of the MAC address and the timestamp."""
+    # Do we have an entry in arp?
+    if ip in arp_entries:
+        (mac_arp, ts_arp) = arp_entries[ip]
+    else:
+        (mac_arp, ts_arp) = ("-", "-")
+
+    return (mac_arp, ts_arp)
+
 
 def main_report(args, arp_entries, dhcp_entries, dns_entries, error_list):
     """Loop over all of the addresses in the range, printing a report."""
@@ -285,32 +323,9 @@ def main_report(args, arp_entries, dhcp_entries, dns_entries, error_list):
 
         (host, resolved_ip) = format_dns_entry(ip, dns_entries, error_list)
 
-        # Do we have a hostname in the dhcp entries?
-        if host != '-' and host.endswith(args.domain):
-            # Change to short hostname.
-            # Add 1 to also remove the '.' between host and domain
-            short_host = host[:-(len(args.domain)+1)]
-            # Only print the short hostname if it's in the domain
-            host = short_host
+        (mac_arp, ts_arp) = format_arp_entry(ip, arp_entries)
 
-            if short_host in dhcp_entries:
-                mac_dhcp = dhcp_entries[short_host]
-            else:
-                mac_dhcp = '-'
-
-        else:
-            short_host = '-'
-            mac_dhcp = '-'
-
-        # Do we have an entry in arp?
-        if ip in arp_entries:
-            (mac_arp, ts_arp) = arp_entries[ip]
-        else:
-            (mac_arp, ts_arp) = ("-", "-")
-
-        # Matching MAC addresses?
-        if mac_dhcp != '-' and mac_dhcp == mac_arp:
-            mac_dhcp = "[ SAME AS ARP ]"
+        mac_dhcp = format_dhcp_entry(host, args.domain, dhcp_entries, mac_arp)
 
         # Reset, because of conditional update below
         delta = None
