@@ -178,8 +178,8 @@ def parse_dns_entries(raw_dns_entries, error_list):
     for line in raw_dns_entries:
 
         # Each line will be either:
-        # machine1.foo.com.                        1800 IN A         10.20.112.113
-        # 113.112.20.10.in-addr.arpa.              1800 IN PTR       machine1.foo.com.
+        # host001.foo.com.             1800 IN A         10.10.15.1
+        # 1.15.10.10.in-addr.arpa.     1800 IN PTR       host001.foo.com.
 
         matched = re.match(r'^(\S+)\s+\d+\s+IN\s+(\S+)\s+(.*)', line)
 
@@ -193,7 +193,7 @@ def parse_dns_entries(raw_dns_entries, error_list):
 
         if dns_type == 'A':
             # Sample text input:
-            # machine1.foo.com.                        1800 IN A         10.20.112.113
+            # host001.foo.com.             1800 IN A         10.10.15.1
 
             # Strip the trailing '.'
             if dns_name.endswith('.'):
@@ -203,7 +203,7 @@ def parse_dns_entries(raw_dns_entries, error_list):
 
         elif dns_type == 'PTR':
             # Sample text input:
-            # 113.112.20.10.in-addr.arpa.              1800 IN PTR       machine1.foo.com.
+            # 1.15.10.10.in-addr.arpa.     1800 IN PTR       host001.foo.com.
 
             # Reverse the octets to retrieve the IP address
             octets = dns_name.split('.')[0:4]
@@ -434,8 +434,8 @@ def parse_dns_file(dns_file):
         # Parse either a forward A record, or reverse PTR record.
         # Ignore other record types.
         # No guarantee at all on the ordering of the dump file (might be lexical)
-        # machine1.foo.com.                        1800 IN A         10.20.112.113
-        # 113.112.20.10.in-addr.arpa.              1800 IN PTR       machine1.foo.com.
+        # host001.foo.com.             1800 IN A         10.10.15.1
+        # 1.15.10.10.in-addr.arpa.     1800 IN PTR       host001.foo.com.
         # TODO: do we care about RRs with multiple values, e.g. round-robin A records?
         matched = re.match(r'^(\S+)\s+\d+\s+IN\s+(\S+)\s+(.*)', fline)
 
@@ -475,7 +475,7 @@ def parse_arp_file(arp_file, error_list):
             continue
 
         # Sample input format:
-        # 2:0:bd:10:3:f 10.15.115.150 1444404183  nmi-guest020
+        # 2:0:bd:10:3:f 10.10.15.1 1444404183  host001
         entry_list = fline.split()
 
         mac = canonicalise_mac(entry_list[0])
