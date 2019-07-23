@@ -3,6 +3,7 @@ from ipam_lite import parse_arp_file
 from ipam_lite import parse_dhcp_file
 from ipam_lite import parse_dns_entries
 from ipam_lite import parse_dns_file
+from ipam_lite import format_dhcp_entry
 from ipam_lite import format_dns_entry
 
 ###################################################
@@ -207,3 +208,40 @@ def test_format_dns_entry():
 
     assert(error_list[0] ==
            "DNS: forward and reverse lookup mismatch for %s => %s => %s" % (ip2, host2, "10.10.10.10"))
+
+
+###################################################
+# DHCP formatting tests
+###################################################
+
+def test_format_dhcp_entry():
+    #### Given ####
+    # Good entry
+    host1 = "host001"
+    mac_dhcp1 = "50:00:00:00:33:09"
+    mac_arp1 = "50:00:00:00:33:09"
+
+    # Mismatch.
+    host2 = "host007"
+    mac_dhcp2 = "50:00:00:0e:22:95"
+    mac_arp2 = "50:00:00:0e:11:e9"
+
+    # Missing.
+    host3 = "host020"
+    mac_arp3 = ""
+
+    dhcp_entries = {
+                   host1: mac_dhcp1,
+                   host2: mac_dhcp2,
+                  }
+
+    #### When ####
+    mac_dhcp1 = format_dhcp_entry(host1, dhcp_entries, mac_arp1)
+    mac_dhcp2 = format_dhcp_entry(host2, dhcp_entries, mac_arp2)
+    mac_dhcp3 = format_dhcp_entry(host3, dhcp_entries, mac_arp3)
+
+
+    #### Then ####
+    assert(mac_dhcp1 == "[ SAME AS ARP ]")
+    assert(mac_dhcp2 == "50:00:00:0e:22:95")
+    assert(mac_dhcp3 == "-")
