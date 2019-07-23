@@ -5,7 +5,7 @@ host006.foo.com.    1800 IN A    10.10.15.6
 host007.foo.com.    1800 IN A    10.10.15.7
 host008.foo.com.    1800 IN A    10.10.15.8
 host009.foo.com.    1800 IN A    10.10.15.9
-host010.foo.com.    1800 IN A    10.10.15.10
+host010.foobar.com.    1800 IN A    10.10.15.10
 1.15.10.10.in-addr.arpa.    1800 IN PTR    host001.foo.com.
 2.15.10.10.in-addr.arpa.    1800 IN PTR    host002.foo.com.
 3.15.10.10.in-addr.arpa.    1800 IN PTR    host003.foo.com.
@@ -13,4 +13,4 @@ host010.foo.com.    1800 IN A    10.10.15.10
 7.15.10.10.in-addr.arpa.    1800 IN PTR    host007.foo.com.
 8.15.10.10.in-addr.arpa.    1800 IN PTR    host008.foo.com.
 9.15.10.10.in-addr.arpa.    1800 IN PTR    host009.foo.com.
-10.15.10.10.in-addr.arpa.    1800 IN PTR    host010.foo.com.
+10.15.10.10.in-addr.arpa.    1800 IN PTR    host010.foobar.com.
