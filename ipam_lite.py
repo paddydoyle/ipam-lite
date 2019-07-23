@@ -95,12 +95,12 @@ def unassigned_addresses_generate(args, dns_entries):
     unassigned_blocks = []
 
     count_unassigned = 0
-    prev_ip_in_block = ''
+    prev_ip_in_block = None
 
     for ip in net.iter_hosts():
         if str(ip) in dns_entries:
             # It resolved ok, so clear this var
-            prev_ip_in_block = ''
+            prev_ip_in_block = None
         else:
             count_unassigned += 1
 
@@ -378,30 +378,31 @@ def parse_dhcp_file(dhcp_file, domain, dhcp_hostnames, error_list):
         # host foo01 { hardware ethernet 01:33:48:7c:9b:ae;
         matched = re.match(r'^\s*host\s+(\S+) \{\s*hardware\s*ethernet\s*([0-9a-fA-F:]+)', fline)
 
-        if matched:
-            host = matched.group(1)
-            mac = canonicalise_mac(matched.group(2))
+        if not matched:
+            continue
 
-            if not mac:
-                mac = record_error(error_list,
-                                   "DHCP: unable to parse '%s' as a MAC address for %s"
-                                   % (matched.group(2), host))
+        host = matched.group(1)
+        mac = canonicalise_mac(matched.group(2))
 
-            # Store the short hostname only
-            if host and host.endswith(domain):
-                short_host = host[:-len(domain)]
-                host = short_host
+        if not mac:
+            mac = record_error(error_list,
+                               "DHCP: unable to parse '%s' as a MAC address for %s"
+                               % (matched.group(2), host))
 
-            # See if the hostname in DHCP still resolves
-            if dhcp_hostnames:
-                try:
-                    _ = socket.gethostbyname('%s.%s' % (host, domain))
+        # Store the short hostname only
+        if host and host.endswith(domain):
+            short_host = host[:-len(domain)]
+            host = short_host
 
-                except socket.error:
-                    record_error(error_list, "DHCP: unable to resolve " + host)
+        # See if the hostname in DHCP still resolves
+        if dhcp_hostnames:
+            try:
+                _ = socket.gethostbyname('%s.%s' % (host, domain))
 
+            except socket.error:
+                record_error(error_list, "DHCP: unable to resolve " + host)
 
-            dhcp_entries[host] = mac
+        dhcp_entries[host] = mac
 
     dhcp_file.close()
 
@@ -438,17 +439,19 @@ def parse_dns_file(dns_file):
         # TODO: do we care about RRs with multiple values, e.g. round-robin A records?
         matched = re.match(r'^(\S+)\s+\d+\s+IN\s+(\S+)\s+(.*)', fline)
 
-        if matched:
-            dns_type = matched.group(2)
+        if not matched:
+            continue
 
-            # Choosing not to process further into forward_lookups and
-            # reverse_lookups here. We could, but then the return values
-            # from this function would be propagated too early in the main
-            # function, and change up the code too much. Instead, put all
-            # of the lines into the list and return that for processing
-            # later.
-            if dns_type == 'A' or dns_type == 'PTR':
-                raw_dns_entries.append(fline)
+        dns_type = matched.group(2)
+
+        # Choosing not to process further into forward_lookups and
+        # reverse_lookups here. We could, but then the return values
+        # from this function would be propagated too early in the main
+        # function, and change up the code too much. Instead, put all
+        # of the lines into the list and return that for processing
+        # later.
+        if dns_type == 'A' or dns_type == 'PTR':
+            raw_dns_entries.append(fline)
 
     dns_file.close()
 
