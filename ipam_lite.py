@@ -229,12 +229,19 @@ def parse_dns_entries(raw_dns_entries, error_list):
     return dns_entries
 
 
-def format_dns_entry(ip, dns_entries, error_list):
+def format_dns_entry(ip, dns_entries, domain, error_list):
     """Format the DNS parts of the main report. Return a
     tuple of the host and its resolved IP."""
     # Did we have a hostname?
     if ip in dns_entries:
         (host, resolved_ip) = dns_entries[ip]
+
+        if host.endswith(domain):
+            # Change to short hostname.
+            # Add 1 to also remove the '.' between host and domain
+            short_host = host[:-(len(domain)+1)]
+            # Only print the short hostname if it's in the domain
+            host = short_host
     else:
         (host, resolved_ip) = ('-', '-')
 
@@ -251,22 +258,12 @@ def format_dns_entry(ip, dns_entries, error_list):
     return (host, resolved_ip)
 
 
-def format_dhcp_entry(host, domain, dhcp_entries, mac_arp):
+def format_dhcp_entry(host, dhcp_entries, mac_arp):
     """Format the DHCP part of the main report. Return the MAC
     address of the host, if any."""
     # Do we have a hostname in the dhcp entries?
-    if host != '-' and host.endswith(args.domain):
-        # Change to short hostname.
-        # Add 1 to also remove the '.' between host and domain
-        short_host = host[:-(len(args.domain)+1)]
-        # Only print the short hostname if it's in the domain
-        host = short_host
-
-        if short_host in dhcp_entries:
-            mac_dhcp = dhcp_entries[short_host]
-        else:
-            mac_dhcp = '-'
-
+    if host in dhcp_entries:
+        mac_dhcp = dhcp_entries[host]
     else:
         mac_dhcp = '-'
 
@@ -321,11 +318,11 @@ def main_report(args, arp_entries, dhcp_entries, dns_entries, error_list):
     for ip in net.iter_hosts():
         ip = str(ip)
 
-        (host, resolved_ip) = format_dns_entry(ip, dns_entries, error_list)
+        (host, resolved_ip) = format_dns_entry(ip, dns_entries, args.domain, error_list)
 
         (mac_arp, ts_arp) = format_arp_entry(ip, arp_entries)
 
-        mac_dhcp = format_dhcp_entry(host, args.domain, dhcp_entries, mac_arp)
+        mac_dhcp = format_dhcp_entry(host, dhcp_entries, mac_arp)
 
         # Reset, because of conditional update below
         delta = None
