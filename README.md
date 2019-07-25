@@ -1,5 +1,7 @@
 # ipam\_lite
 
+[![Build Status](https://travis-ci.org/paddydoyle/ipam-lite.svg?branch=master)](https://travis-ci.org/paddydoyle/ipam-lite)
+
 Simple IPAM reporting tool
 
 ## Purpose
