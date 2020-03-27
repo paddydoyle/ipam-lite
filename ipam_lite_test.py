@@ -48,7 +48,7 @@ def test_canonicalise_mac_wrong_length():
 ###################################################
 
 def test_parse_dns_entries():
-    #### Given ####
+    # GIVEN these test data with valid and invalid entries
     dns_text = [
                 "machine1.foo.com.           1800 IN A   10.10.15.1",
                 "1.15.10.10.in-addr.arpa. 1800 IN PTR machine1.foo.com.",
@@ -68,10 +68,10 @@ def test_parse_dns_entries():
     host2 = "machine2.foo.com"
     expected_values[ip2] = (host2, "-")
 
-    #### When ####
+    # WHEN the entries are parsed
     dns_entries = parse_dns_entries(dns_text, error_list)
 
-    #### Then ####
+    # THEN the valid entries should parse ok and the invalid should error
     assert(dns_entries[ip1] == expected_values[ip1])
     assert(dns_entries[ip2] == expected_values[ip2])
 
@@ -79,16 +79,16 @@ def test_parse_dns_entries():
     assert(error_list[1] == "DNS: to parse DNS entry: bob")
 
 def test_parse_dns_file():
-    #### Given ####
+    # GIVEN these test data files with valid entries
     dns_file = "test_data/dns.txt"
 
     host_a1 = "host001.foo.com.    1800 IN A    10.10.15.1"
     host_ptr1 = "1.15.10.10.in-addr.arpa.    1800 IN PTR    host001.foo.com."
 
-    #### When ####
+    # WHEN the entries are parsed
     raw_dns_entries = parse_dns_file(dns_file)
 
-    #### Then ####
+    # THEN the expected values are found
     assert(host_a1 in raw_dns_entries)
     assert(host_ptr1 in raw_dns_entries)
 
@@ -98,7 +98,7 @@ def test_parse_dns_file():
 ###################################################
 
 def test_parse_dhcp_file():
-    #### Given ####
+    # GIVEN these test data files with valid and invalid entries
     dhcp_file = "test_data/dhcpd.txt"
     domain = "foo.com"
     dhcp_hostnames = False
@@ -120,10 +120,10 @@ def test_parse_dhcp_file():
     host10 = "host010.foobar.com"
     mac10 = "50:00:00:0f:22:04"
 
-    #### When ####
+    # WHEN the entries are parsed
     dhcp_entries = parse_dhcp_file(dhcp_file, domain, dhcp_hostnames, error_list)
 
-    #### Then ####
+    # THEN the valid entries should parse ok and the invalid should error
     assert(dhcp_entries[host1] == mac1)
     assert(dhcp_entries[host8] == "ERR0")
     assert(dhcp_entries[host9] == "ERR1")
@@ -140,7 +140,7 @@ def test_parse_dhcp_file():
 ###################################################
 
 def test_parse_arp_file():
-    #### Given ####
+    # GIVEN these test data files with valid entries
     arp_file = "test_data/arp.txt"
     error_list = []
 
@@ -156,10 +156,10 @@ def test_parse_arp_file():
     mac10 = "50:00:00:0f:22:04"
     ts10 = "1457278560"
 
-    #### When ####
+    # WHEN the entries are parsed
     arp_entries = parse_arp_file(arp_file, error_list)
 
-    #### Then ####
+    # THEN the expected values are found
     assert(arp_entries[ip1] == (mac1, ts1))
 
     assert(arp_entries[ip8] == (mac8, ts8))
@@ -172,7 +172,7 @@ def test_parse_arp_file():
 ###################################################
 
 def test_format_dns_entry():
-    #### Given ####
+    # GIVEN these test data with valid and invalid entries
     domain = "foo.com"
     error_list = []
 
@@ -195,13 +195,13 @@ def test_format_dns_entry():
                    ip2: (host2, resolved_ip2),
                   }
 
-    #### When ####
+    # WHEN the entries are formatted
     (processed_host1, resolved_ip1) = format_dns_entry(ip1, dns_entries, domain, error_list)
     (processed_host2, resolved_ip2) = format_dns_entry(ip2, dns_entries, domain, error_list)
     (processed_host3, resolved_ip3) = format_dns_entry(ip3, dns_entries, domain, error_list)
 
 
-    #### Then ####
+    # THEN the valid entries should parse ok and the invalid should error
     assert(resolved_ip1 == "OK")
     assert(resolved_ip2 == resolved_ip2)
     assert(resolved_ip2 == "ERR0")
@@ -219,7 +219,8 @@ def test_format_dns_entry():
 ###################################################
 
 def test_format_dhcp_entry():
-    #### Given ####
+    # GIVEN these test data with valid and invalid entries
+
     # Good entry
     host1 = "host001"
     mac_dhcp1 = "50:00:00:00:33:09"
@@ -239,13 +240,12 @@ def test_format_dhcp_entry():
                    host2: mac_dhcp2,
                   }
 
-    #### When ####
+    # WHEN the entries are formatted
     mac_dhcp1 = format_dhcp_entry(host1, dhcp_entries, mac_arp1)
     mac_dhcp2 = format_dhcp_entry(host2, dhcp_entries, mac_arp2)
     mac_dhcp3 = format_dhcp_entry(host3, dhcp_entries, mac_arp3)
 
-
-    #### Then ####
+    # THEN the valid entries should parse ok
     assert(mac_dhcp1 == "[ SAME AS ARP ]")
     assert(mac_dhcp2 == "50:00:00:0e:22:95")
     assert(mac_dhcp3 == "-")
@@ -256,7 +256,8 @@ def test_format_dhcp_entry():
 ###################################################
 
 def test_format_arp_entry():
-    #### Given ####
+    # GIVEN these test data with valid and invalid entries
+
     # Good entry, same date.
     ip1 = "10.10.15.1"
     mac_arp1 = "50:00:00:00:33:09"
@@ -281,13 +282,13 @@ def test_format_arp_entry():
                    ip2: (mac_arp2, ts_arp2),
                   }
 
-    #### When ####
+    # WHEN the entries are formatted
     (mac_arp1, ts_arp1, delta_arp1) = format_arp_entry(ip1, arp_entries)
     (mac_arp2, ts_arp2, delta_arp2) = format_arp_entry(ip2, arp_entries)
     (mac_arp3, ts_arp3, delta_arp3) = format_arp_entry(ip3, arp_entries)
 
 
-    #### Then ####
+    # THEN the valid entries should parse ok and the invalid should error
     assert(mac_arp1 == "50:00:00:00:33:09")
     assert(expected_ts_arp1 == ts_arp1)
 
@@ -302,7 +303,8 @@ def test_format_arp_entry():
 ###################################################
 
 def test_unassigned_addresses_generate():
-    #### Given ####
+    # GIVEN these test data with valid entries
+
     class ArgsMock:
         pass
     args = ArgsMock()
@@ -320,12 +322,12 @@ def test_unassigned_addresses_generate():
                    "10.10.15.10": ("", ""),
                   }
 
-    #### When ####
+    # WHEN the entries are formatted
     (count_unassigned,
      count_addresses,
      unassigned_blocks) = unassigned_addresses_generate(args, dns_entries)
 
-    #### Then ####
+    # THEN the valid entries should parse ok
     assert(count_unassigned == 6)
     assert(count_addresses == 14)
 
