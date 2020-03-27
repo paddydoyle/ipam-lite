@@ -254,7 +254,8 @@ def format_dns_entry(ip, dns_entries, domain, error_list):
     else:
         resolved_ip = record_error(error_list,
                                    'DNS: forward and reverse lookup mismatch '
-                                   'for %s => %s => %s' % (ip, host, resolved_ip))
+                                   'for %s => %s => %s' %
+                                   (ip, host, resolved_ip))
 
     return (host, resolved_ip)
 
@@ -314,18 +315,21 @@ def main_report(args, arp_entries, dhcp_entries, dns_entries, error_list):
         print("Filtering the report to show IP address with no ARP entries in "
               "the past %d days\n" % (args.no_arp_days))
 
-    # IP -> host -> IP (match y/n) -> MAC (DHCP) -> MAC (ARP) -> timestamp (ARP)
+    # IP -> host -> IP (match y/n) -> MAC(DHCP) -> MAC(ARP) -> timestamp(ARP)
     format_str = '{0:16} | {1:24} | {2:8} | {3:18} | {4:18} | {5:21}'
 
     # Report headers.
-    print format_str.format('IP', 'Host', 'Host->IP', 'MAC (DHCP)', 'MAC (ARP)', 'Last seen (ARP)')
-    print format_str.format('-' * 16, '-' * 24, '-' * 8, '-' * 18, '-' * 18, '-' * 21)
+    print format_str.format('IP', 'Host', 'Host->IP', 'MAC (DHCP)',
+                            'MAC (ARP)', 'Last seen (ARP)')
+    print format_str.format('-' * 16, '-' * 24, '-' * 8, '-' * 18,
+                            '-' * 18, '-' * 21)
 
     # Main report loop: over all the entries in the IP subnet
     for ip in net.iter_hosts():
         ip = str(ip)
 
-        (host, resolved_ip) = format_dns_entry(ip, dns_entries, args.domain, error_list)
+        (host, resolved_ip) = format_dns_entry(ip, dns_entries, args.domain,
+                                               error_list)
 
         (mac_arp, ts_arp, delta_arp) = format_arp_entry(ip, arp_entries)
 
@@ -339,12 +343,16 @@ def main_report(args, arp_entries, dhcp_entries, dns_entries, error_list):
 
         # Any restrictions on the printing? Limit to ones with no arp entries?
         if args.no_arp and ts_arp == '-':
-            print format_str.format(ip, host, resolved_ip, mac_dhcp, mac_arp, ts_arp)
-        elif args.no_arp_days and delta_arp and delta_arp.days > args.no_arp_days:
-            print format_str.format(ip, host, resolved_ip, mac_dhcp, mac_arp, ts_arp)
+            print format_str.format(ip, host, resolved_ip, mac_dhcp, mac_arp,
+                                    ts_arp)
+        elif (args.no_arp_days and delta_arp and
+              delta_arp.days > args.no_arp_days):
+            print format_str.format(ip, host, resolved_ip, mac_dhcp, mac_arp,
+                                    ts_arp)
         elif not args.no_arp and not args.no_arp_days:
             # No restrictions, print everything.
-            print format_str.format(ip, host, resolved_ip, mac_dhcp, mac_arp, ts_arp)
+            print format_str.format(ip, host, resolved_ip, mac_dhcp, mac_arp,
+                                    ts_arp)
 
     print ""
     print "Total addresses in the range:          %4d" % (len(net) - 2)
@@ -433,10 +441,12 @@ def parse_dns_file(dns_file):
 
         # Parse either a forward A record, or reverse PTR record.
         # Ignore other record types.
-        # No guarantee at all on the ordering of the dump file (might be lexical)
+        # No guarantee at all on the ordering of the dump file (might be
+        # lexical)
         # host001.foo.com.             1800 IN A         10.10.15.1
         # 1.15.10.10.in-addr.arpa.     1800 IN PTR       host001.foo.com.
-        # TODO: do we care about RRs with multiple values, e.g. round-robin A records?
+        # TODO: do we care about RRs with multiple values, e.g.
+        # round-robin A records?
         matched = re.match(r'^(\S+)\s+\d+\s+IN\s+(\S+)\s+(.*)', fline)
 
         if not matched:
@@ -489,7 +499,7 @@ def parse_arp_file(arp_file, error_list):
         ts = entry_list[2]
 
         # In case of duplicates, only store the most recent.
-        if not ip in arp_entries or int(arp_entries[ip][1]) < int(ts):
+        if ip not in arp_entries or int(arp_entries[ip][1]) < int(ts):
             arp_entries[ip] = (mac, ts)
 
     arp_file.close()
@@ -522,8 +532,8 @@ def canonicalise_mac(mac_str):
 
     try:
         mac = EUI(mac_str, dialect=MACCustom)
-        #mac.dialect = mac_unix_expanded
-        #mac.dialect = mac_unix
+        # mac.dialect = mac_unix_expanded
+        # mac.dialect = mac_unix
     except core.AddrFormatError:
         return ""
 
@@ -540,13 +550,15 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     # Positional arguments
     parser.add_argument("netaddress", help="IPv4 network address")
-    parser.add_argument("netmask", help="IPv4 network mask, in CIDR 'slash' notation")
+    parser.add_argument("netmask",
+                        help="IPv4 network mask, in CIDR 'slash' notation")
     parser.add_argument("domain", help="default DNS domain name for hosts")
     parser.add_argument("arp_file",
                         help="the arp.dat file from arpwatch (typically "
                         "/var/lib/arpwatch/arp.dat)")
     parser.add_argument("dhcp_file",
-                        help="the dhcpd.conf file (typically /etc/dhcpd/dhcpd.conf)")
+                        help="the dhcpd.conf file (typically "
+                        "/etc/dhcpd/dhcpd.conf)")
     parser.add_argument("dns_file",
                         help="the dumped DNS entries (for example dumped from "
                         "'named-compilezone -f raw -F text'), forward and "
@@ -557,21 +569,25 @@ if __name__ == '__main__':
     parser.add_argument("-d", "--dhcp_hostnames",
                         help="check for hostnames in DHCP which don't resolve",
                         action="store_true")
-    parser.add_argument("-e", "--errors", help="display parsing and resolution errors",
+    parser.add_argument("-e", "--errors",
+                        help="display parsing and resolution errors",
                         action="store_true")
     parser.add_argument("-u", "--unassigned",
-                        help="only display lists of unassigned/free IP addresses",
+                        help="only display lists of unassigned/free IP "
+                        "addresses",
                         action="store_true")
     parser.add_argument("-n", "--no_arp",
-                        help="only display list of IP addresses with no ARP entries",
+                        help="only display list of IP addresses with no ARP "
+                        "entries",
                         action="store_true")
     parser.add_argument("-N", "--no_arp_days",
-                        help="only display list of IP addresses with no ARP entries in "
-                        "the last N days",
+                        help="only display list of IP addresses with no ARP "
+                        "entries in the last N days",
                         type=int)
     parser.add_argument("-r", "--resolve",
-                        help="look up hostnames on the fly, intead of reading entries "
-                        "from a dumped file; ignore 'dns_file' in this case",
+                        help="look up hostnames on the fly, intead of reading "
+                        "entries from a dumped file; ignore 'dns_file' in "
+                        "this case",
                         action="store_true")
     args = parser.parse_args()
 
