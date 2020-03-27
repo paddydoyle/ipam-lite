@@ -13,6 +13,7 @@ It is mainly a reporting tool for when DNS and DHCP information has diverged
 over time, and for giving an overall IP/DNS report for a given subnet.
 """
 
+from __future__ import print_function
 import argparse
 import re
 import socket
@@ -52,7 +53,7 @@ def construct_dns_entries(args, error_list):
     """
 
     if args.resolve:
-        net = IPNetwork('%s/%s' % (args.netaddress, args.netmask))
+        net = IPNetwork('{}/{}'.format(args.netaddress, args.netmask))
 
         # Generate the dict of resolved DNS entries, via live lookup
         return resolve_dns_entries_via_lookup(net, error_list)
@@ -72,25 +73,26 @@ def unassigned_addresses_report(args, dns_entries):
      count_addresses,
      unassigned_blocks) = unassigned_addresses_generate(args, dns_entries)
 
-    print 'Unassigned address blocks:\n'
-    print 'Count: Range'
+    print('Unassigned address blocks:\n')
+    print('Count: Range')
 
     for unassigned_block in unassigned_blocks:
         if len(unassigned_block) == 1:
-            print '%5d: %-16s' % (1, unassigned_block[0])
+            print('{:5d}: {:<16s}'.format(1, unassigned_block[0]))
         else:
-            print '%5d: %-16s => %-16s' % (len(unassigned_block),
-                                           unassigned_block[0],
-                                           unassigned_block[-1])
+            print('{:5d}: {:<16s} => {:<16s}'.format(len(unassigned_block),
+                                                     unassigned_block[0],
+                                                     unassigned_block[-1]))
 
-    print "\nTotal unassigned: %d / %d" % (count_unassigned, count_addresses)
+    print("\nTotal unassigned: {} / {}".format(count_unassigned,
+                                               count_addresses))
 
 
 def unassigned_addresses_generate(args, dns_entries):
     """Loop over all of the addresses in the range. Return a list of
     unassigned IP addresses in contiguous blocks."""
 
-    net = IPNetwork('%s/%s' % (args.netaddress, args.netmask))
+    net = IPNetwork('{}/{}'.format(args.netaddress, args.netmask))
 
     unassigned_blocks = []
 
@@ -253,9 +255,9 @@ def format_dns_entry(ip, dns_entries, domain, error_list):
         resolved_ip = '-'
     else:
         resolved_ip = record_error(error_list,
-                                   'DNS: forward and reverse lookup mismatch '
-                                   'for %s => %s => %s' %
-                                   (ip, host, resolved_ip))
+                                   'DNS: forward and reverse lookup '
+                                   'mismatch for {} => {} => {}'
+                                   ''.format(ip, host, resolved_ip))
 
     return (host, resolved_ip)
 
@@ -294,35 +296,35 @@ def format_arp_entry(ip, arp_entries):
         delta_arp = datetime.now() - date_arp
         # TODO: configurable parameter of how many days?
         if delta_arp.days > 1:
-            ts_arp += ' [%d days]' % delta_arp.days
+            ts_arp += ' [{} days]'.format(delta_arp.days)
 
     return (mac_arp, ts_arp, delta_arp)
 
 
 def main_report(args, arp_entries, dhcp_entries, dns_entries, error_list):
     """Loop over all of the addresses in the range, printing a report."""
-    net = IPNetwork('%s/%s' % (args.netaddress, args.netmask))
+    net = IPNetwork('{}/{}'.format(args.netaddress, args.netmask))
 
     count_arp_entries = 0
     count_old_arp = 0
 
     # Top header
-    print "IPAM-Lite Report for %s\n" % net
+    print("IPAM-Lite Report for {}\n".format(net))
 
     if args.no_arp:
-        print "Filtering the report to show IP address with no ARP entries\n"
+        print("Filtering the report to show IP address with no ARP entries\n")
     if args.no_arp_days:
         print("Filtering the report to show IP address with no ARP entries in "
-              "the past %d days\n" % (args.no_arp_days))
+              "the past {} days\n".format(args.no_arp_days))
 
     # IP -> host -> IP (match y/n) -> MAC(DHCP) -> MAC(ARP) -> timestamp(ARP)
     format_str = '{0:16} | {1:24} | {2:8} | {3:18} | {4:18} | {5:21}'
 
     # Report headers.
-    print format_str.format('IP', 'Host', 'Host->IP', 'MAC (DHCP)',
-                            'MAC (ARP)', 'Last seen (ARP)')
-    print format_str.format('-' * 16, '-' * 24, '-' * 8, '-' * 18,
-                            '-' * 18, '-' * 21)
+    print(format_str.format('IP', 'Host', 'Host->IP', 'MAC (DHCP)',
+                            'MAC (ARP)', 'Last seen (ARP)'))
+    print(format_str.format('-' * 16, '-' * 24, '-' * 8, '-' * 18,
+                            '-' * 18, '-' * 21))
 
     # Main report loop: over all the entries in the IP subnet
     for ip in net.iter_hosts():
@@ -343,23 +345,30 @@ def main_report(args, arp_entries, dhcp_entries, dns_entries, error_list):
 
         # Any restrictions on the printing? Limit to ones with no arp entries?
         if args.no_arp and ts_arp == '-':
-            print format_str.format(ip, host, resolved_ip, mac_dhcp, mac_arp,
-                                    ts_arp)
+            print(format_str.format(ip, host, resolved_ip, mac_dhcp, mac_arp,
+                                    ts_arp))
         elif (args.no_arp_days and delta_arp and
               delta_arp.days > args.no_arp_days):
-            print format_str.format(ip, host, resolved_ip, mac_dhcp, mac_arp,
-                                    ts_arp)
+            print(format_str.format(ip, host, resolved_ip, mac_dhcp, mac_arp,
+                                    ts_arp))
         elif not args.no_arp and not args.no_arp_days:
             # No restrictions, print everything.
-            print format_str.format(ip, host, resolved_ip, mac_dhcp, mac_arp,
-                                    ts_arp)
+            print(format_str.format(ip, host, resolved_ip, mac_dhcp, mac_arp,
+                                    ts_arp))
 
-    print ""
-    print "Total addresses in the range:          %4d" % (len(net) - 2)
-    print "Total addresses with hostnames:        %4d" % (len(dns_entries))
-    print "Total with no ARP entries:             %4d" % (len(net) - 2 - count_arp_entries)
+    footer_format_str = '{:<40}{:4d}'
+
+    print("")
+    print(footer_format_str.format("Total addresses in the range:",
+                                   len(net) - 2))
+    print(footer_format_str.format("Total addresses with hostnames:",
+                                   len(dns_entries)))
+    print(footer_format_str.format("Total with no ARP entries:",
+                                   len(net) - 2 - count_arp_entries))
     if args.no_arp_days:
-        print "Total ARP entries older than %d days: %4d" % (args.no_arp_days, count_old_arp)
+        print(footer_format_str.format(
+              "Total ARP entries older than {} days:".format(args.no_arp_days),
+              count_old_arp))
 
 
 # Parse the dhcpd.conf file
@@ -372,7 +381,7 @@ def parse_dhcp_file(dhcp_file, domain, dhcp_hostnames, error_list):
     try:
         dhcp_file = open(dhcp_file, 'r')
     except IOError, reason:
-        print 'Could not open file: ', str(reason)
+        print('Could not open file: {}'.format(reason))
         raise
 
     for fline in dhcp_file:
@@ -384,7 +393,12 @@ def parse_dhcp_file(dhcp_file, domain, dhcp_hostnames, error_list):
 
         # Sample input string:
         # host foo01 { hardware ethernet 01:33:48:7c:9b:ae;
-        matched = re.match(r'^\s*host\s+(\S+) \{\s*hardware\s*ethernet\s*([0-9a-fA-F:]+)', fline)
+        matched = re.match(r'''
+                ^\s*
+                host\s+(\S+)\s+
+                \{\s*hardware\s*ethernet\s*
+                ([0-9a-fA-F:]+)
+                ''', fline, re.VERBOSE)
 
         if not matched:
             continue
@@ -394,8 +408,8 @@ def parse_dhcp_file(dhcp_file, domain, dhcp_hostnames, error_list):
 
         if not mac:
             mac = record_error(error_list,
-                               "DHCP: unable to parse '%s' as a MAC address for %s"
-                               % (matched.group(2), host))
+                               "DHCP: unable to parse '{}' as a MAC address "
+                               "for {}".format(matched.group(2), host))
 
         # Store the short hostname only
         if host and host.endswith(domain):
@@ -405,7 +419,7 @@ def parse_dhcp_file(dhcp_file, domain, dhcp_hostnames, error_list):
         # See if the hostname in DHCP still resolves
         if dhcp_hostnames:
             try:
-                _ = socket.gethostbyname('%s.%s' % (host, domain))
+                _ = socket.gethostbyname('{}.{}'.format(host, domain))
 
             except socket.error:
                 record_error(error_list, "DHCP: unable to resolve " + host)
@@ -426,7 +440,7 @@ def parse_dns_file(dns_file):
     try:
         dns_file = open(dns_file, 'r')
     except IOError, reason:
-        print 'Could not open file: ', str(reason)
+        print('Could not open file: '.format(reason))
         raise
 
     for fline in dns_file:
@@ -474,7 +488,7 @@ def parse_arp_file(arp_file, error_list):
     try:
         arp_file = open(arp_file, 'r')
     except IOError, reason:
-        print 'Could not open file: ', str(reason)
+        print('Could not open file: '.format(reason))
         raise
 
     for fline in arp_file:
@@ -492,8 +506,8 @@ def parse_arp_file(arp_file, error_list):
 
         if not mac:
             mac = record_error(error_list,
-                               "ARP: unable to parse '%s' as a MAC address for %s"
-                               % (entry_list[0], entry_list[1]))
+                               "ARP: unable to parse '{}' as a MAC address "
+                               "for {}".format(entry_list[0], entry_list[1]))
 
         ip = entry_list[1]
         ts = entry_list[2]
@@ -510,15 +524,15 @@ def parse_arp_file(arp_file, error_list):
 def record_error(error_list, message):
     """Store the error string. Return the index into the error array."""
     error_list.append(message)
-    return 'ERR%d' % (len(error_list)-1)
+    return 'ERR{}'.format(len(error_list)-1)
 
 
 def error_report(error_list):
     """Print the error list."""
-    print "\nErrors:\n"
+    print("\nErrors:\n")
 
     for idx, err in enumerate(error_list):
-        print 'ERR%-5d %s' % (idx, err)
+        print('ERR{:<5d} {}'.format(idx, err))
 
 
 def canonicalise_mac(mac_str):
