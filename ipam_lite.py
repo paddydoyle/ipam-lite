@@ -81,8 +81,8 @@ def unassigned_addresses_report(args, dns_entries):
             print('{:5d}: {:<16s}'.format(1, unassigned_block[0]))
         else:
             print('{:5d}: {:<16s} => {:<16s}'.format(len(unassigned_block),
-                                                     unassigned_block[0],
-                                                     unassigned_block[-1]))
+                                                     str(unassigned_block[0]),
+                                                     str(unassigned_block[-1])))
 
     print("\nTotal unassigned: {} / {}".format(count_unassigned,
                                                count_addresses))
