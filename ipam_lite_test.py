@@ -14,29 +14,36 @@ from ipam_lite import unassigned_addresses_generate
 # MAC parsing tests
 ###################################################
 
+
 def test_canonicalise_mac_valid():
     mac = "de:ad:be:ef:00:01"
     assert(canonicalise_mac(mac) == mac)
+
 
 def test_canonicalise_mac_upper():
     mac = "DE:AD:BE:EF:00:01"
     assert(canonicalise_mac(mac) == mac.lower())
 
+
 def test_canonicalise_mac_dashed_input():
     mac = "DE-AD-BE-EF-00-01"
     assert(canonicalise_mac(mac) == mac.lower().replace("-", ":"))
+
 
 def test_canonicalise_mac_missing_leading_zeros():
     mac = "2:0:bd:10:3:f"
     assert(canonicalise_mac(mac) == "02:00:bd:10:03:0f")
 
+
 def test_canonicalise_mac_not_hex_input():
     mac = "ZZ:AD:TT:EF:00:01"
     assert(canonicalise_mac(mac) == "")
 
+
 def test_canonicalise_mac_wrong_format():
     mac = "this is not a mac"
     assert(canonicalise_mac(mac) == "")
+
 
 def test_canonicalise_mac_wrong_length():
     mac = "ZZ:AD:TT:EF:00"
@@ -77,6 +84,7 @@ def test_parse_dns_entries():
 
     assert(error_list[0] == "DNS: unexpected RR type: PTRRRR")
     assert(error_list[1] == "DNS: to parse DNS entry: bob")
+
 
 def test_parse_dns_file():
     # GIVEN these test data files with valid entries
@@ -121,7 +129,8 @@ def test_parse_dhcp_file():
     mac10 = "50:00:00:0f:22:04"
 
     # WHEN the entries are parsed
-    dhcp_entries = parse_dhcp_file(dhcp_file, domain, dhcp_hostnames, error_list)
+    dhcp_entries = parse_dhcp_file(dhcp_file, domain, dhcp_hostnames,
+                                   error_list)
 
     # THEN the valid entries should parse ok and the invalid should error
     assert(dhcp_entries[host1] == mac1)
@@ -130,9 +139,11 @@ def test_parse_dhcp_file():
     assert(dhcp_entries[host10] == mac10)
 
     assert(error_list[0] ==
-           "DHCP: unable to parse '%s' as a MAC address for %s" % (mac8, host8))
+           "DHCP: unable to parse '{}' as a MAC address for "
+           "{}".format(mac8, host8))
     assert(error_list[1] ==
-           "DHCP: unable to parse '%s' as a MAC address for %s" % (mac9, host9))
+           "DHCP: unable to parse '{}' as a MAC address for "
+           "{}".format(mac9, host9))
 
 
 ###################################################
@@ -196,10 +207,12 @@ def test_format_dns_entry():
                   }
 
     # WHEN the entries are formatted
-    (processed_host1, resolved_ip1) = format_dns_entry(ip1, dns_entries, domain, error_list)
-    (processed_host2, resolved_ip2) = format_dns_entry(ip2, dns_entries, domain, error_list)
-    (processed_host3, resolved_ip3) = format_dns_entry(ip3, dns_entries, domain, error_list)
-
+    (processed_host1, resolved_ip1) = format_dns_entry(ip1, dns_entries,
+                                                       domain, error_list)
+    (processed_host2, resolved_ip2) = format_dns_entry(ip2, dns_entries,
+                                                       domain, error_list)
+    (processed_host3, resolved_ip3) = format_dns_entry(ip3, dns_entries,
+                                                       domain, error_list)
 
     # THEN the valid entries should parse ok and the invalid should error
     assert(resolved_ip1 == "OK")
@@ -211,7 +224,8 @@ def test_format_dns_entry():
     assert(processed_host3 == "-")
 
     assert(error_list[0] ==
-           "DNS: forward and reverse lookup mismatch for %s => %s => %s" % (ip2, host2, "10.10.10.10"))
+           "DNS: forward and reverse lookup mismatch for "
+           "{} => {} => {}".format(ip2, host2, "10.10.10.10"))
 
 
 ###################################################
@@ -271,7 +285,7 @@ def test_format_arp_entry():
     expected_ts_arp2 = datetime.fromtimestamp(ts_arp2)
     delta_arp2 = datetime.now() - expected_ts_arp2
     expected_ts_arp2 = expected_ts_arp2.strftime('%Y-%m-%d')
-    expected_ts_arp2 += ' [%d days]' % delta_arp2.days
+    expected_ts_arp2 += ' [{} days]'.format(delta_arp2.days)
 
     # Missing.
     ip3 = "10.10.15.20"
@@ -287,7 +301,6 @@ def test_format_arp_entry():
     (mac_arp2, ts_arp2, delta_arp2) = format_arp_entry(ip2, arp_entries)
     (mac_arp3, ts_arp3, delta_arp3) = format_arp_entry(ip3, arp_entries)
 
-
     # THEN the valid entries should parse ok and the invalid should error
     assert(mac_arp1 == "50:00:00:00:33:09")
     assert(expected_ts_arp1 == ts_arp1)
@@ -295,7 +308,7 @@ def test_format_arp_entry():
     assert(expected_ts_arp2 == ts_arp2)
 
     assert(expected_mac_arp3 == "-")
-    assert(delta_arp3 == None)
+    assert(delta_arp3 is None)
 
 
 ###################################################
