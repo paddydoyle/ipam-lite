@@ -597,7 +597,7 @@ if __name__ == '__main__':
     parser.add_argument("-N", "--no_arp_days",
                         help="only display list of IP addresses with no ARP "
                         "entries in the last N days",
-                        type=int)
+                        type=int, default=0)
     parser.add_argument("-r", "--resolve",
                         help="look up hostnames on the fly, intead of reading "
                         "entries from a dumped file; ignore 'dns_file' in "
