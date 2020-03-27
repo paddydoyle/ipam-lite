@@ -380,8 +380,8 @@ def parse_dhcp_file(dhcp_file, domain, dhcp_hostnames, error_list):
 
     try:
         dhcp_file = open(dhcp_file, 'r')
-    except IOError, reason:
-        print('Could not open file: {}'.format(reason))
+    except IOError as err:
+        print('Could not open file: {}'.format(err))
         raise
 
     for fline in dhcp_file:
@@ -439,8 +439,8 @@ def parse_dns_file(dns_file):
 
     try:
         dns_file = open(dns_file, 'r')
-    except IOError, reason:
-        print('Could not open file: '.format(reason))
+    except IOError as err:
+        print('Could not open file: '.format(err))
         raise
 
     for fline in dns_file:
@@ -487,8 +487,8 @@ def parse_arp_file(arp_file, error_list):
     arp_entries = {}
     try:
         arp_file = open(arp_file, 'r')
-    except IOError, reason:
-        print('Could not open file: '.format(reason))
+    except IOError as err:
+        print('Could not open file: '.format(err))
         raise
 
     for fline in arp_file:
