@@ -51,9 +51,9 @@ It can also print a compressed report of unassigned IP addresses in the range.
 ## Usage
 
     $ ./ipam_lite.py -h
-    usage: ipam_lite.py [-h] [-v] [-d] [-e] [-u] [-n] [-N NO_ARP_DAYS] [-r]
+    usage: ipam_lite.py [-h] [-v] [-d] [-e] [-u] [-n] [-N NO_ARP_DAYS] [-r] [-m]
                         netaddress netmask domain arp_file dhcp_file dns_file
-
+    
     positional arguments:
       netaddress            IPv4 network address
       netmask               IPv4 network mask, in CIDR 'slash' notation
@@ -78,7 +78,8 @@ It can also print a compressed report of unassigned IP addresses in the range.
       -r, --resolve         look up hostnames on the fly, intead of reading
                             entries from a dumped file; ignore 'dns_file' in this
                             case
-
+      -m, --mismatches      report any DNS forward/reverse mismatches and return
+                            an error if any are found
 
 
 ## Examples
@@ -159,6 +160,16 @@ Report of unassigned IP addresses (no hostnames):
        8: 10.20.115.212  => 10.20.115.219 
     
     Total unassigned: 250 / 1022
+
+
+Report of unassigned IP addresses (no hostnames):
+
+    $ ./ipam_lite.py 10.20.112.0 22 my.dns.domain arp/arp.dat dhcp/dhcpd.conf dns/db.ALL.txt -m
+    DNS Mismatch Report
+    
+    IP               | Host                     | Host->IP
+    ---------------- | ------------------------ | --------
+    10.20.112.9      | host009.foo.com          | 10.20.112.222
 
 
 ## DNS File Parsing
