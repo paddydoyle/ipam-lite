@@ -17,6 +17,7 @@ from __future__ import print_function
 import argparse
 import re
 import socket
+import sys
 from datetime import datetime
 from netaddr import EUI
 from netaddr import core
@@ -30,6 +31,13 @@ def main(args):
 
     # Read the dns entries, unless we're told to resolve on the fly
     dns_entries = construct_dns_entries(args, error_list)
+
+    # Short report: just any DNS forward/reverse mismatches. Return an error
+    # code to the shell if we find errors.
+    if args.mismatches:
+        if not report_dns_mismatches(dns_entries):
+            sys.exit(1)
+        return None
 
     # Short report: just the ranges of unassigned addresses
     if args.unassigned:
@@ -314,6 +322,37 @@ def find_dns_mismatches(dns_entries):
             mismatches.append((ip, host, resolved_ip))
 
     return mismatches
+
+
+def report_dns_mismatches(dns_entries):
+    """Loop over all of the IP addresses in the DNS zone, looking for
+    mismatches between the forward and reverse DNS lookups.
+    Optionally print any errors which are found.
+    Return True if no mismatches are found"""
+
+    mismatches = find_dns_mismatches(dns_entries)
+
+    if not mismatches:
+        return True
+
+    # Top header
+    print("DNS Mismatch Report\n")
+
+    # IP -> host -> IP (match y/n)
+    format_str = '{0:16} | {1:24} | {2:8}'
+
+    # Report headers.
+    print(format_str.format('IP', 'Host', 'Host->IP'))
+    print(format_str.format('-' * 16, '-' * 24, '-' * 8))
+
+    # Main report loop: over all the IP entries in the zone
+    for mismatch in mismatches:
+        (ip, host, resolved_ip) = mismatch
+
+        print(format_str.format(ip, host, resolved_ip))
+
+    # We found errors.
+    return False
 
 
 def main_report(args, arp_entries, dhcp_entries, dns_entries, error_list):
@@ -617,6 +656,10 @@ if __name__ == '__main__':
                         help="look up hostnames on the fly, intead of reading "
                         "entries from a dumped file; ignore 'dns_file' in "
                         "this case",
+                        action="store_true")
+    parser.add_argument("-m", "--mismatches",
+                        help="report any DNS forward/reverse mismatches "
+                        "and return an error if any are found",
                         action="store_true")
     args = parser.parse_args()
 
