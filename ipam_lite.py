@@ -301,6 +301,21 @@ def format_arp_entry(ip, arp_entries):
     return (mac_arp, ts_arp, delta_arp)
 
 
+def find_dns_mismatches(dns_entries):
+    """Loop over all of the IP addresses in the DNS zone, looking for
+    mismatches between the forward and reverse DNS lookups.
+    Return errors if found"""
+    mismatches = []
+
+    for ip in dns_entries:
+        (host, resolved_ip) = dns_entries[ip]
+
+        if ip != resolved_ip:
+            mismatches.append((ip, host, resolved_ip))
+
+    return mismatches
+
+
 def main_report(args, arp_entries, dhcp_entries, dns_entries, error_list):
     """Loop over all of the addresses in the range, printing a report."""
     net = IPNetwork('{}/{}'.format(args.netaddress, args.netmask))

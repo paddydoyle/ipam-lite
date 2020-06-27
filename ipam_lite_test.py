@@ -9,6 +9,7 @@ from ipam_lite import format_arp_entry
 from ipam_lite import format_dhcp_entry
 from ipam_lite import format_dns_entry
 from ipam_lite import unassigned_addresses_generate
+from ipam_lite import find_dns_mismatches
 
 ###################################################
 # MAC parsing tests
@@ -226,6 +227,59 @@ def test_format_dns_entry():
     assert(error_list[0] ==
            "DNS: forward and reverse lookup mismatch for "
            "{} => {} => {}".format(ip2, host2, "10.10.10.10"))
+
+
+###################################################
+# DNS mismatch tests
+###################################################
+
+def test_find_dns_mismatches_success():
+    # GIVEN these test data with valid entries
+    domain = "foo.com"
+    error_list = []
+
+    # Good entry
+    ip1 = "10.10.15.1"
+    host1 = "host001.foo.com"
+    resolved_ip1 = ip1
+
+    # Good entry
+    ip2 = "10.10.15.2"
+    host2 = "host002.foo.com"
+    resolved_ip2 = "10.10.15.2"
+
+    dns_entries = {
+                   ip1: (host1, resolved_ip1),
+                   ip2: (host2, resolved_ip2),
+                  }
+
+    # WHEN we search for errors, THEN none are found
+    assert(len(find_dns_mismatches(dns_entries)) == 0)
+
+
+def test_find_dns_mismatches_failure():
+    # GIVEN these test data with invalid entries
+    domain = "foo.com"
+    error_list = []
+
+    # Forward and reverse mismatch.
+    ip1 = "10.10.15.1"
+    host1 = "host001.foo.com"
+    resolved_ip1 = "10.10.10.20"
+
+    # Forward and reverse mismatch.
+    ip2 = "10.10.15.2"
+    host2 = "host002.foo.com"
+    resolved_ip2 = "10.10.15.2"
+    resolved_ip2 = "10.20.20.20"
+
+    dns_entries = {
+                   ip1: (host1, resolved_ip1),
+                   ip2: (host2, resolved_ip2),
+                  }
+
+    # WHEN we search for errors, THEN some are found
+    assert(len(find_dns_mismatches(dns_entries)) == 2)
 
 
 ###################################################
