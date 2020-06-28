@@ -162,7 +162,7 @@ Report of unassigned IP addresses (no hostnames):
     Total unassigned: 250 / 1022
 
 
-Report of unassigned IP addresses (no hostnames):
+Report of DNS forward/reverse mismatches:
 
     $ ./ipam_lite.py 10.20.112.0 22 my.dns.domain arp/arp.dat dhcp/dhcpd.conf dns/db.ALL.txt -m
     DNS Mismatch Report
